@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -127,10 +128,11 @@ func (s *Server) handlePatients(w http.ResponseWriter, r *http.Request) {
 		query += ` AND sede_id = ?`
 		args = append(args, sede)
 	}
-	query += ` ORDER BY name COLLATE NOCASE`
+	query += ` ORDER BY LOWER(name) ASC`
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
+		log.Printf("error en handlePatients (query): %v", err)
 		writeErr(w, 500, "no se pudieron leer los pacientes")
 		return
 	}
@@ -140,6 +142,7 @@ func (s *Server) handlePatients(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var p Patient
 		if err := rows.Scan(&p.ID, &p.Name, &p.Doc, &p.Birth, &p.Phone, &p.Email, &p.Address, &p.SedeID, &p.Allergies, &p.Notes, &p.Active, &p.Insurance, &p.GuardianName, &p.GuardianDoc, &p.GuardianPhone, &p.GuardianRel, &p.CreatedAt); err != nil {
+			log.Printf("error en handlePatients (scan): %v", err)
 			writeErr(w, 500, "no se pudieron leer los pacientes")
 			return
 		}
