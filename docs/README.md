@@ -1,49 +1,45 @@
 # Documentación — SIGO-Dental
 
-Índice maestro de la documentación del **Sistema Integral de Gestión Odontológica y
-Expediente Clínico Digital**.
+Índice maestro de la documentación del **Sistema Integral de Gestión Odontológica y Expediente Clínico Digital**.
 
-- **Etapa:** Fase 1 — Levantamiento y diseño, con MVP funcional entregado.
-- **Versión del conjunto documental:** `v0.2.0` (modo prototipo, documento vivo).
-- **Fecha de corte:** 2026-10-29.
+- **Etapa:** Full-Stack Implementado (Backend Go + Frontend React 19 + Docker).
+- **Versión del conjunto documental:** `v1.0.0`.
+- **Fecha de corte:** 2026-10-30.
 - **Idioma:** español (código y nombres técnicos en inglés cuando corresponda).
-
-> **Modo MVP:** no hay stakeholders formales ni aprobaciones con firma. Los documentos se
-> actualizan a medida que se construye el prototipo; el alcance realmente implementado está
-> en [`MVP-1-HORA.md`](MVP-1-HORA.md).
 
 ---
 
 ## 1. Mapa de documentos
 
-### 1.0 MVP
+### 1.0 Estado de la Implementación
 
-| Documento | Ruta | Estado |
-|---|---|---|
-| Alcance, plan de 60 minutos y guion de demo | [`MVP-1-HORA.md`](MVP-1-HORA.md) | Vigente |
-| Aplicación funcional (HTML/CSS/JS) | [`../app/index.html`](../app/index.html) | Completado |
+| Documento | Ruta | Estado | Descripción |
+|---|---|---|---|
+| **Estado de Implementación** | [`ESTADO-IMPLEMENTACION.md`](ESTADO-IMPLEMENTACION.md) | **Vigente** | Estado técnico detallado de endpoints Go, componentes React y pruebas. |
+| **Matriz de Requisitos SRS** | [`ESTADO-IMPLEMENTACION-SRS-PDF.md`](ESTADO-IMPLEMENTACION-SRS-PDF.md) | **Vigente** | Mapeo de RF, RN y RNF del documento SRS contra la solución construida. |
+| **Alcance y Guion MVP 1h** | [`MVP-1-HORA.md`](MVP-1-HORA.md) | Histórico / Vigente | Prototipo estático inicial (HTML/JS sin backend) conservado en `app/`. |
 
-### 1.1 Requisitos
+### 1.1 Requisitos del Sistema
 
 | Documento | Ruta | Estado |
 |---|---|---|
 | SRS (especificación principal) | [`SRS/SRS-SIGO-Dental.md`](SRS/SRS-SIGO-Dental.md) | Vigente (referencia) |
-| Casos de uso detallados | [`SRS/A-casos-de-uso.md`](SRS/A-casos-de-uso.md) | Borrador |
-| Matriz de trazabilidad | [`SRS/B-matriz-trazabilidad.md`](SRS/B-matriz-trazabilidad.md) | Borrador |
-| Catálogo tabular de requisitos | [`SRS/C-catalogo-requisitos.csv`](SRS/C-catalogo-requisitos.csv) | Borrador |
-| Glosario | [`GLOSARIO.md`](GLOSARIO.md) | Borrador |
+| Casos de uso detallados | [`SRS/A-casos-de-uso.md`](SRS/A-casos-de-uso.md) | Vigente |
+| Matriz de trazabilidad | [`SRS/B-matriz-trazabilidad.md`](SRS/B-matriz-trazabilidad.md) | Vigente |
+| Catálogo tabular de requisitos | [`SRS/C-catalogo-requisitos.csv`](SRS/C-catalogo-requisitos.csv) | Actualizado con estados de implementación |
+| Glosario clínico y técnico | [`GLOSARIO.md`](GLOSARIO.md) | Vigente |
 
-### 1.2 Levantamiento (Fase 1)
+### 1.2 Levantamiento y Metodología
 
 | Documento | Ruta | Estado |
 |---|---|---|
-| Plan de levantamiento | [`levantamiento/PLAN-LEVANTAMIENTO.md`](levantamiento/PLAN-LEVANTAMIENTO.md) | Borrador |
-| Preguntas y decisiones abiertas | [`levantamiento/PREGUNTAS-ABIERTAS.md`](levantamiento/PREGUNTAS-ABIERTAS.md) | Vivo |
-| Plantilla de entrevista | [`plantillas/entrevista.md`](plantillas/entrevista.md) | Lista |
-| Plantilla de historia de usuario | [`plantillas/historia-usuario.md`](plantillas/historia-usuario.md) | Lista |
-| Plantilla de acta de reunión | [`plantillas/acta-reunion.md`](plantillas/acta-reunion.md) | Lista |
+| Plan de levantamiento | [`levantamiento/PLAN-LEVANTAMIENTO.md`](levantamiento/PLAN-LEVANTAMIENTO.md) | Referencia |
+| Preguntas y decisiones abiertas | [`levantamiento/PREGUNTAS-ABIERTAS.md`](levantamiento/PREGUNTAS-ABIERTAS.md) | Referencia |
+| Plantilla de entrevista | [`plantillas/entrevista.md`](plantillas/entrevista.md) | Reutilizable |
+| Plantilla de historia de usuario | [`plantillas/historia-usuario.md`](plantillas/historia-usuario.md) | Reutilizable |
+| Plantilla de acta de reunión | [`plantillas/acta-reunion.md`](plantillas/acta-reunion.md) | Reutilizable |
 
-### 1.3 Diseño (SDD)
+### 1.3 Diseño de Software (SDD)
 
 El SDD está dividido por dominio; cada carpeta contiene un documento autónomo y legible.
 El índice detallado, con dependencias y estado, está en [`SDD/README.md`](SDD/README.md).
@@ -90,59 +86,28 @@ Los identificadores son **inmutables**: si un requisito se elimina, se marca com
 |---|---|
 | `Borrador` | En elaboración; puede cambiar sin aviso. |
 | `En revisión` | Congelado para revisión. |
-| `Vigente` | Alineado con el prototipo actual. |
+| `Vigente` | Alineado con la plataforma implementada. |
 | `Obsoleto` | Reemplazado por otro documento (se indica cuál). |
 
-> En este proyecto no se usa el estado `Aprobado` ni se requieren firmas: el prototipo es la
-> validación. Un documento pasa a `Vigente` cuando el código lo refleja.
-
-### 2.3 Versionado
-
-- `0.y.z`: borrador (cambios libres).
-- `1.0.0` se reserva para una eventual versión estabilizada del sistema completo.
-- Cambios: `MAJOR` si cambia el alcance, `MINOR` si agrega requisitos,
-  `PATCH` si corrige redacción.
-
-### 2.4 Diagramas
-
-Todos los diagramas se escriben en **Mermaid** dentro del Markdown, para que se versionen
-como texto y se rendericen en GitHub/GitLab. No se aceptan imágenes binarias como única
-fuente de un diagrama.
-
-### 2.5 Priorización
-
-Se usa **MoSCoW** (`Must`, `Should`, `Could`, `Won't`) combinado con la fase de entrega.
-Un `Must` sin fase asignada es un error de planificación.
-
 ---
 
-## 3. Flujo de trabajo documental
+## 3. Arquitectura del Repositorio
 
-```mermaid
-flowchart LR
-    A[Entrevista / hallazgo] --> B[Pregunta abierta Q-xx]
-    B --> C[Decisión / supuesto]
-    C --> D[Actualizar SRS]
-    D --> E[Propagar a SDD]
-    E --> F[Actualizar trazabilidad]
-    F --> G[Implementar en el MVP]
-    G --> H{¿El flujo funciona?}
-    H -->|Sí| I[Documento vigente]
-    H -->|No| D
+```text
+proyecto_odontologo/
+├── README.md                  # Presentación principal, quickstart y stack
+├── docker-compose.yml         # Orquestación de desarrollo y producción
+├── server/                    # Backend en Go (REST API, SQLite/PostgreSQL)
+│   ├── main.go                # Entrada del servidor y configuración de BD
+│   ├── handlers.go            # Endpoints y lógica de negocio
+│   ├── server_test.go         # Batería de pruebas unitarias automatizadas
+│   └── Dockerfile             # Multi-stage build estático (CGO_ENABLED=0)
+├── web/                       # Frontend SPA en React 19 + TypeScript + Vite
+│   ├── src/
+│   │   ├── pages/             # 17 vistas clínicas y operativas
+│   │   ├── components/        # Componentes reutilizables y modales
+│   │   └── api.ts             # Cliente HTTP tipado
+│   └── Dockerfile             # Multi-stage build con Nginx
+├── app/                       # MVP estático inicial (HTML/JS vanilla)
+└── docs/                      # Especificación técnica, SRS y SDD
 ```
-
-Regla de oro: **ningún requisito sin criterio de aceptación verificable** y **ningún
-componente de diseño sin requisito que lo justifique**.
-
----
-
-## 4. Próximos pasos
-
-1. Usar el MVP como guion de demo y anotar los ajustes de flujo que aparezcan.
-2. Resolver las preguntas bloqueantes `Q-01` a `Q-05` de
-   [PREGUNTAS-ABIERTAS](levantamiento/PREGUNTAS-ABIERTAS.md) si el proyecto continúa.
-3. Si se pasa a producto: reemplazar `localStorage` por PostgreSQL y exponer una API
-   NestJS (ver [`MVP-1-HORA.md`](MVP-1-HORA.md), sección 8).
-4. Definir el alcance de la Fase 2 (núcleo administrativo) y estimar los Sprints 1–4.
-5. Revisar los ADR `001` a `006` y el modelo de datos antes de escribir código de backend.
-

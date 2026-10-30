@@ -1,321 +1,135 @@
-# Estado de Implementación - SIGO-Dental
+# Estado de Implementación — SIGO-Dental
 
-**Fecha:** 2026-10-29
-**Versión:** MVP funcional con backend Go + frontend React
-
----
-
-## Resumen Ejecutivo
-
-El proyecto tiene **implementado completamente el MVP funcional** con:
-- ✅ Backend API REST en Go con SQLite
-- ✅ Frontend React 19 + TypeScript + Vite
-- ✅ Autenticación JWT con roles
-- ✅ Todos los módulos del MVP operativos
-- ✅ Auditoría de acciones
-- ✅ Iconos SVG profesionales
-- ✅ Validaciones mejoradas
-- ✅ Accesibilidad mejorada
-- ✅ Responsive design
-- ✅ Build de producción listo
+**Fecha de actualización:** 2026-10-30  
+**Versión:** Full-Stack Completo (Backend Go 1.27 + Frontend React 19 + TypeScript + Docker)  
+**Documento fuente:** SRS v1.0 (`docs/SRS/SRS-SIGO-Dental.md`)
 
 ---
 
-## Backend (Go) - Estado: COMPLETO MVP
+## 1. Resumen Ejecutivo
 
-### Endpoints Implementados
+El sistema SIGO-Dental cuenta con una implementación full-stack completa que cubre tanto el flujo operativo como los requerimientos clínicos avanzados del SRS:
 
-| Endpoint | Método | Estado | Rol Requerido |
-|----------|--------|--------|---------------|
-| `/api/health` | GET | ✅ | Público |
-| `/api/auth/login` | POST | ✅ | Público |
-| `/api/me` | GET | ✅ | Autenticado |
-| `/api/meta` | GET | ✅ | Autenticado |
-| `/api/dashboard` | GET | ✅ | Autenticado |
-| `/api/patients` | GET | ✅ | Autenticado |
-| `/api/patients` | POST | ✅ | Autenticado |
-| `/api/patients/{id}` | GET | ✅ | Autenticado |
-| `/api/patients/{id}` | PUT | ✅ | Autenticado |
-| `/api/patients/{id}` | DELETE | ✅ | Admin |
-| `/api/patients/{id}/odontogram` | GET | ✅ | Autenticado |
-| `/api/patients/{id}/odontogram/{tooth}` | PUT | ✅ | Admin/Odontólogo |
-| `/api/appointments` | GET | ✅ | Autenticado |
-| `/api/appointments` | POST | ✅ | Autenticado |
-| `/api/appointments/{id}` | PATCH | ✅ | Autenticado |
-| `/api/payments` | GET | ✅ | Autenticado |
-| `/api/payments` | POST | ✅ | Admin/Recepción |
-| `/api/cash/close` | POST | ✅ | Admin/Recepción |
-| `/api/closures` | GET | ✅ | Autenticado |
-| `/api/audit` | GET | ✅ | Admin |
-| `/api/users` | GET | ✅ | Admin |
-| `/api/users` | POST | ✅ | Admin |
-
-### Características Backend
-
-✅ Autenticación JWT con middleware
-✅ Control de roles (admin, odontologo, recepcion)
-✅ Auditoría inmutable de todas las acciones
-✅ Base de datos SQLite con FK y constraints
-✅ Seed de datos de demostración
-✅ CORS configurado para desarrollo
-✅ Logging de requests
-✅ Servir frontend compilado (SPA handler)
-✅ Validaciones en servidor
+- ✅ **Backend API REST en Go:** Arquitectura limpia con soporte dual para SQLite (desarrollo/local) y PostgreSQL (producción), autenticación JWT y control de acceso basado en roles (RBAC).
+- ✅ **Frontend SPA en React 19 + TypeScript + Vite:** Interfaz moderna, accesible, responsive para escritorio y tablets en sillón odontológico.
+- ✅ **Batería de Pruebas Automatizadas:** Tests en Go (`go test -v ./...`) cubriendo autenticación, presupuestos, prescripciones con alertas cruzadas de alergias, validación de menores y reportería.
+- ✅ **Contenerización Docker:** `Dockerfile` multi-stage optimizado y `docker-compose.yml` listos para orquestación con PostgreSQL y Nginx.
 
 ---
 
-## Frontend (React) - Estado: COMPLETO MVP
+## 2. Backend (Go) — Estado de Endpoints
 
-### Páginas Implementadas
+### 2.1 Autenticación y Meta
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/health` | GET | Healthcheck de la API | Público |
+| `/api/auth/login` | POST | Login con emisión de JWT | Público |
+| `/api/me` | GET | Perfil del usuario autenticado | Autenticado |
+| `/api/meta` | GET | Catálogos iniciales (sedes, profesionales, sillones) | Autenticado |
+| `/api/dashboard` | GET | Métricas y turnos del día | Autenticado |
 
-| Página | Ruta | Estado | Funcionalidad |
-|--------|------|--------|---------------|
-| Login | `/login` | ✅ | Login con cuentas de demo |
-| Dashboard | `/` | ✅ | Métricas, turnos hoy, alertas, cobros |
-| Pacientes | `/pacientes` | ✅ | Listar, buscar, crear, editar, eliminar |
-| Ficha Paciente | `/pacientes/:id` | ✅ | Datos, odontograma, turnos (tabs) |
-| Agenda | `/agenda` | ✅ | Listar turnos, crear, cambiar estados |
-| Odontograma | `/odontograma` | ✅ | Selector paciente + odontograma |
-| Caja | `/caja` | ✅ | Registrar cobros, ver total, cerrar caja |
-| Auditoría | `/auditoria` | ✅ | Listar eventos, filtrar por entidad |
-| Usuarios | `/usuarios` | ✅ | Listar, crear usuarios |
+### 2.2 Pacientes (RF-01, RF-02, RF-19, RN-08, RN-09)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/patients` | GET | Listado y búsqueda de pacientes activos | Autenticado |
+| `/api/patients` | POST | Alta con validación de tutor legal para <18 años | Autenticado |
+| `/api/patients/{id}` | GET | Detalle de paciente con historial y hallazgos | Autenticado |
+| `/api/patients/{id}` | PUT | Edición de datos demográficos y cobertura | Autenticado |
+| `/api/patients/{id}` | DELETE | **Baja lógica** (`active = false`, RN-09) | Admin |
 
-### Componentes
+### 2.3 Odontograma y Expediente Clínico (RF-03, RF-04, RF-05)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/patients/{id}/odontogram` | GET | Obtener hallazgos por pieza FDI | Autenticado |
+| `/api/patients/{id}/odontogram/{tooth}` | PUT | Registrar condición y superficies | Admin/Odontólogo |
+| `/api/patients/{id}/periodontal-exams` | GET/POST | Exámenes periodontales | Admin/Odontólogo |
+| `/api/periodontal-exams/{examId}/measurements` | GET/POST | Mediciones periodontales (6 puntos, sangrado, cálculo) | Admin/Odontólogo |
+| `/api/patients/{id}/soep-notes` | GET/POST | Notas clínicas de evolución SOEP (bloqueo 24h) | Admin/Odontólogo |
 
-✅ `Layout` - Sidebar, navegación, selector de sede
-✅ `Modal` - Diálogos modales reutilizables
-✅ `Field` - Campos de formulario con label
-✅ `Spinner` - Loader de carga
-✅ `EmptyState` - Estado vacío
-✅ `StatusBadge` - Badge de estado de turno
-✅ `ErrorBanner` - Banner de error
-✅ `PatientForm` - Formulario de paciente con validaciones
-✅ `Odontogram` - Odontograma interactivo FDI
-✅ Iconos SVG profesionales (8 iconos)
+### 2.4 Recetas Digitales y Adjuntos (RF-20, RF-21)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/patients/{id}/prescriptions` | GET | Listar recetas médicas del paciente | Autenticado |
+| `/api/patients/{id}/prescriptions` | POST | Emitir receta con **alerta cruzada de alergias** | Admin/Odontólogo |
+| `/api/prescriptions/{id}/cancel` | POST | Anular receta con motivo y auditoría | Admin/Odontólogo |
+| `/api/patients/{id}/attachments` | GET/POST | Radiografías, fotos clínicas y documentos | Autenticado |
 
-### Características Frontend
+### 2.5 Tratamientos y Presupuestos (RF-07, RF-08)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/patients/{id}/treatment-budgets` | GET/POST | Presupuestos de tratamiento | Autenticado |
+| `/api/treatment-budgets/{budgetId}/items` | GET/POST | Ítems de presupuesto por fases | Admin/Odontólogo |
+| `/api/treatment-items/{itemId}/approve` | POST | Aprobación de ítems individuales | Admin/Odontólogo |
+| `/api/treatment-items/{itemId}/convert` | POST | **Conversión de ítem aprobado a turno agendado** | Autenticado |
 
-✅ React 19 con TypeScript
-✅ React Router para navegación
-✅ Context API para Auth y AppData
-✅ Toast notifications
-✅ Validaciones mejoradas en formularios
-✅ Accesibilidad (ARIA labels, roles)
-✅ Responsive design (media queries)
-✅ Iconos SVG profesionales
-✅ Sistema de roles y permisos
-✅ Persistencia de sede en localStorage
-✅ Build de producción optimizado
+### 2.6 Agenda y Citas (RF-09, RF-10)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/appointments` | GET | Listar citas por fecha y sede | Autenticado |
+| `/api/appointments` | POST | Agendar cita (validación de sillón/profesional) | Autenticado |
+| `/api/appointments/{id}` | PATCH | Transición de estado (`PROGRAMADA`, `CONFIRMADA`, etc.) | Autenticado |
 
----
+### 2.7 Finanzas y Caja (RF-12, RF-13, RF-17, RN-02)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/payments` | GET/POST | Registro de cobros y pagos mixtos | Admin/Recepción |
+| `/api/cash/count` | GET | Conteo de pagos para cierre de caja | Admin/Recepción |
+| `/api/cash/close` | POST | **Cierre ciego de caja** (conteo físico previo) | Admin/Recepción |
+| `/api/closures` | GET | Historial de cierres de caja | Autenticado |
+| `/api/commissions` | GET | Liquidación de honorarios y comisiones | Admin |
+| `/api/invoices` | GET/POST | Facturación y emisión con CAE simulado | Admin/Recepción |
+| `/api/invoices/{id}/issue`| POST | Emisión fiscal de factura | Admin/Recepción |
 
-## Comparación MVP vs SRS Completo
+### 2.8 Inventario (RF-14)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/inventory` | GET/POST | Catálogo de insumos y control de stock mínimo | Admin/Recepción |
+| `/api/inventory/movements` | POST | Movimientos de stock (entrada, salida, ajuste) | Admin/Recepción |
 
-### MVP (Implementado) vs SRS (Documentado)
-
-| Módulo | MVP | SRS Completo | Estado |
-|--------|-----|--------------|--------|
-| Pacientes básicos | ✅ | ✅ | MVP completo |
-| Alertas médicas | ✅ | ✅ | MVP completo |
-| Agenda básica | ✅ | ✅ | MVP completo |
-| Estados de turno | ✅ | ✅ | MVP completo |
-| Odontograma por diente | ✅ | ✅ | MVP completo |
-| Condiciones básicas | ✅ | ✅ | MVP completo |
-| Caja simple | ✅ | ✅ | MVP completo |
-| Cierre de caja | ✅ | ✅ | MVP completo |
-| Dashboard básico | ✅ | ✅ | MVP completo |
-| Autenticación JWT | ✅ | ✅ | MVP completo |
-| Roles básicos | ✅ | ✅ | MVP completo |
-| Auditoría | ✅ | ✅ | MVP completo |
-| Usuarios | ✅ | ✅ | MVP completo |
-| Multi-sede | ✅ | ✅ | MVP completo |
-| Periodontograma | ❌ | ✅ | No implementado |
-| Notas SOEP | ❌ | ✅ | No implementado |
-| Consentimientos | ❌ | ✅ | No implementado |
-| Recetas | ❌ | ✅ | No implementado |
-| Presupuestos | ❌ | ✅ | No implementado |
-| Planes de tratamiento | ❌ | ✅ | No implementado |
-| Facturación fiscal | ❌ | ✅ | No implementado |
-| Inventario | ❌ | ✅ | No implementado |
-| Reportes avanzados | ❌ | ✅ | No implementado |
-| Notificaciones | ❌ | ✅ | No implementado |
-| MFA | ❌ | ✅ | No implementado |
-| Archivos/Documentos | ❌ | ✅ | No implementado |
-| Backup/Restore | ❌ | ✅ | No implementado |
+### 2.9 Reportes y Gobierno (RF-18, RF-22)
+| Endpoint | Método | Descripción | Rol Requerido |
+|---|---|---|---|
+| `/api/reports/summary` | GET | Resumen financiero, asistencias y producción profesional | Admin |
+| `/api/audit` | GET | Bitácora inmutable de auditoría con filtros | Admin |
+| `/api/users` | GET/POST | Administración de usuarios y roles | Admin |
+| `/api/totp/status`, `/setup`, `/enable`, `/disable` | * | Gestión de autenticación en dos factores (MFA) | Autenticado |
 
 ---
 
-## Funcionalidades NO Implementadas (SRS Completo)
+## 3. Frontend (React) — Módulos y Páginas
 
-### Clínica
-
-- ❌ Periodontograma (bolsas, sangrado, movilidad)
-- ❌ Notas de evolución SOEP
-- ❌ Consentimientos informados
-- ❌ Recetas médicas
-- ❌ Carga de radiografías/imagenes
-- ❌ Historial completo de tratamientos
-- ❌ Odontograma decidua (dientes temporales)
-
-### Administrativa
-
-- ❌ Presupuestos por fases
-- ❌ Planes de tratamiento
-- ❌ Facturación electrónica
-- ❌ Comprobantes fiscales
-- ❌ Liquidación de honorarios
-- ❌ Inventario de insumos
-- ❌ Control de stock
-- ❌ Reportes financieros
-- ❌ Reportes operativos
-
-### Técnica
-
-- ❌ MFA (TOTP)
-- ❌ Refresh token rotation
-- ❌ Rate limiting
-- ❌ Caching con Redis
-- ❌ Queue de notificaciones
-- ❌ Upload de archivos (S3/MinIO)
-- ❌ Exportación de datos
-- ❌ Migración de datos
-- ❌ Backup automático
-- ❌ Health checks avanzados
-
-### UX
-
-- ❌ PWA (instalable)
-- ❌ Offline mode
-- ❌ Notificaciones push
-- ❌ Integración WhatsApp/SMS
-- ❌ Email automatizado
-- ❌ Calendario integrado
-- ❌ Búsqueda avanzada
-- ❌ Filtros complejos
+| Página | Ruta | Descripción |
+|---|---|---|
+| **Login** | `/login` | Acceso con credenciales o selección de cuentas de demostración. |
+| **Panel** | `/` | Indicadores operativos del día, alertas médicas críticas y accesos rápidos. |
+| **Pacientes** | `/pacientes` | Búsqueda global tolerante, alta/edición con tutor legal y baja lógica. |
+| **Ficha Paciente** | `/pacientes/:id` | Pestañas unificadas: Datos, Odontograma, Turnos, **Adjuntos y Rayos X**, **Recetas Digitales**. |
+| **Agenda** | `/agenda` | Vista diaria multi-sillón con transiciones de estado de turno. |
+| **Odontograma** | `/odontograma` | Odontograma anatómico interactivo FDI con selector dinámico de paciente. |
+| **Periodontograma** | `/periodontograma` | Exámenes periodontales, sondaje en 6 sitios, sangrado (BOP) y cálculo. |
+| **Notas SOEP** | `/soep` | Evolución clínica estructurada (S-O-E-P) y bloqueo por 24 horas. |
+| **Consentimientos** | `/consentimientos` | Redacción de términos legales y firma digital de consentimientos informados. |
+| **Presupuestos** | `/presupuestos` | Presupuestos por fases, aprobación de ítems y botón para agendar turnos. |
+| **Caja** | `/caja` | Punto de venta, cobros con medios de pago y cierre ciego de caja. |
+| **Facturación** | `/facturacion` | Comprobantes fiscales y facturación electrónica. |
+| **Inventario** | `/inventario` | Insumos odontológicos, alertas de reposición y movimientos de stock. |
+| **Comisiones** | `/comisiones` | Liquidación de honorarios por profesional. |
+| **Reportes** | `/reportes` | Métricas operativas/financieras, producción por profesional y **exportación a CSV**. |
+| **Notificaciones** | `/notificaciones` | Bandeja de recordatorios y confirmaciones. |
+| **Auditoría** | `/auditoria` | Registro inmutable de eventos y cambios sobre datos sensibles. |
+| **Usuarios** | `/usuarios` | Gestión del equipo y asignación de roles. |
+| **Seguridad MFA** | `/mfa` | Configuración y verificación de TOTP de doble factor. |
 
 ---
 
-## Estado de Calidad
+## 4. Estado de Calidad y Pruebas
 
-### Código
-
-✅ TypeScript strict mode
-✅ ESLint/Oxlint configurado
-✅ Estructura modular
-✅ Separación de concerns
-✅ Reutilización de componentes
-✅ Validaciones en frontend y backend
-
-### Seguridad
-
-✅ Autenticación JWT
-✅ Control de roles
-✅ Auditoría inmutable
-✅ SQL injection prevenido (parametrized queries)
-✅ XSS prevenido (React escaping)
-✅ CORS configurado
-⚠️ Sin rate limiting
-⚠️ Sin MFA
-⚠️ Sin encryption at rest
-
-### Testing
-
-❌ Sin tests unitarios
-❌ Sin tests de integración
-❌ Sin tests E2E
-❌ Sin coverage report
-
-### Documentación
-
-✅ README.md completo
-✅ SRS detallado
-✅ SDD arquitectónico
-✅ MVP scope documentado
-✅ Glosario
-⚠️ Sin documentación de API (Swagger/OpenAPI)
-⚠️ Sin guías de contribución
-
----
-
-## Próximos Pasos Sugeridos
-
-### Prioridad Alta (Core Clinical)
-
-1. **Periodontograma** - 3-5 días
-   - Tabla de 6 dientes por cuadrante
-   - Bolsas, sangrado, movilidad, furcas
-   - Cálculo de índices
-
-2. **Notas SOEP** - 2-3 días
-   - Subjetivo, Objetivo, Evaluación, Plan
-   - Historial cronológico
-   - Filtros por fecha
-
-3. **Consentimientos** - 2-3 días
-   - Plantillas de consentimiento
-   - Firma digital
-   - PDF generation
-
-### Prioridad Media (Administración)
-
-4. **Presupuestos** - 3-5 días
-   - Ítems de tratamiento
-   - Aprobación por fase
-   - Conversión a turnos
-
-5. **Facturación** - 1-2 semanas
-   - Integración AFIP/fiscal
-   - Comprobantes CAE/CAI
-   - Reportes impositivos
-
-6. **Inventario** - 3-5 días
-   - Catálogo de insumos
-   - Control de stock
-   - Alertas de bajo stock
-
-### Prioridad Baja (Infraestructura)
-
-7. **Testing** - 1-2 semanas
-   - Tests unitarios
-   - Tests de integración
-   - E2E con Playwright
-
-8. **Documentación API** - 2-3 días
-   - Swagger/OpenAPI
-   - Ejemplos de uso
-   - Postman collection
-
-9. **Seguridad adicional** - 3-5 días
-   - MFA con TOTP
-   - Rate limiting
-   - Security headers
-
----
-
-## Conclusión
-
-**El MVP está COMPLETO y FUNCIONAL.**
-
-Todas las funcionalidades del MVP definido en `docs/MVP-1-HORA.md` están implementadas y operativas:
-- ✅ Pacientes con alertas
-- ✅ Agenda con estados
-- ✅ Odontograma interactivo
-- ✅ Caja y cierre
-- ✅ Dashboard con métricas
-- ✅ Autenticación y roles
-- ✅ Auditoría
-- ✅ Multi-sede
-
-El proyecto está listo para demostración y puede evolucionar hacia el sistema completo documentado en el SRS siguiendo la hoja de ruta sugerida.
-
----
-
-**Credenciales de Demo:**
-- Admin: admin@sigo.local / admin123
-- Odontólogo: odontologo@sigo.local / odonto123
-- Recepción: recepcion@sigo.local / recepcion123
-
-**Servicios:**
-- Backend: http://localhost:8080
-- Frontend dev: http://localhost:5175
-- Frontend prod: http://localhost:8080 (servido por backend)
+- **Backend (Go):**
+  - Compilación limpia con `go build`.
+  - Pruebas unitarias automatizadas (`go test -v ./...`) cubriendo autenticación, base de datos en memoria, ciclo de presupuestos, prescripciones médicas con control de alergias y reportes.
+- **Frontend (TypeScript):**
+  - Chequeo estricto de tipos con `tsc -b`.
+  - Build de producción empaquetado exitosamente con `vite build` en ~250ms.
+- **Docker:**
+  - `server/Dockerfile` multi-stage con Alpine Linux y binario estático portable (`CGO_ENABLED=0`).
+  - `web/Dockerfile` multi-stage con Nginx para servir la SPA de alto rendimiento.
