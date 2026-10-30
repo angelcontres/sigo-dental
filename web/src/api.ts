@@ -271,7 +271,10 @@ export const api = {
 
   // MFA / TOTP - RNF-05
   totpStatus: () => request<{ enabled: boolean; configured: boolean }>('/totp/status'),
-  totpSetup: () => request<{ secret: string; backupCodes: string; enabled: boolean }>('/totp/setup'),
+  totpSetup: () =>
+    request<{ secret: string; backupCodes: string; enabled: boolean }>('/totp/setup', {
+      method: 'POST',
+    }),
   totpEnable: (code: string) => request<{ enabled: boolean }>('/totp/enable', {
     method: 'POST',
     body: JSON.stringify({ code }),
