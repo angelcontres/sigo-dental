@@ -18,6 +18,7 @@ func env(key, fallback string) string {
 
 type Server struct {
 	db        *DB
+	cache     *CacheService
 	secret    []byte
 	staticDir string
 	metaCache any
@@ -28,6 +29,7 @@ type Server struct {
 
 func main() {
 	dbConnStr := env("SIGO_DB", "data/sigo-demo.db") // Cambiado para forzar nuevos datos seed
+	redisAddr := env("SIGO_REDIS", "")
 	secret := env("SIGO_JWT_SECRET", "sigo-dev-secret-change-in-production")
 	addr := env("SIGO_ADDR", ":8080")
 	staticDir := env("SIGO_WEB", filepath.Join("..", "web", "dist"))
@@ -41,7 +43,9 @@ func main() {
 		log.Fatalf("no se pudieron cargar los datos iniciales: %v", err)
 	}
 
-	s := &Server{db: db, secret: []byte(secret), staticDir: staticDir}
+	cache := initCache(redisAddr)
+
+	s := &Server{db: db, cache: cache, secret: []byte(secret), staticDir: staticDir}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {

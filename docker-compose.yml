@@ -1,4 +1,21 @@
 services:
+  # Redis (Caché en memoria de alto rendimiento)
+  redis:
+    image: redis:7-alpine
+    container_name: sigo-redis
+    ports:
+      - "${PORT_REDIS:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigo-network
+    restart: unless-stopped
+
   # PostgreSQL (Base de datos relacional para producción)
   postgres:
     image: postgres:16-alpine
@@ -28,6 +45,7 @@ services:
     container_name: sigo-backend
     environment:
       SIGO_DB: ${SIGO_DB:-postgres://${POSTGRES_USER:-sigo}:${POSTGRES_PASSWORD:-sigo_password_change_me}@postgres:5432/${POSTGRES_DB:-sigo_dental}?sslmode=disable}
+      SIGO_REDIS: ${SIGO_REDIS:-redis:6379}
       SIGO_ADDR: ${SIGO_ADDR:-:8080}
       SIGO_JWT_SECRET: ${SIGO_JWT_SECRET:-sigo-production-secret-change-me}
     ports:
@@ -36,6 +54,8 @@ services:
       - backend_data:/app/data
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - sigo-network
@@ -57,6 +77,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   backend_data:
 
 networks:

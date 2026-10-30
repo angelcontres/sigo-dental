@@ -32,6 +32,7 @@ func setupTestServer(t *testing.T) (*Server, func()) {
 
 	s := &Server{
 		db:        db,
+		cache:     initCache(""),
 		secret:    []byte("test-secret"),
 		staticDir: tmpDir,
 	}

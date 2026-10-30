@@ -46,6 +46,13 @@ func (s *Server) currentUser(r *http.Request) *Claims {
 /* ---------------- Meta ---------------- */
 
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
+	cacheKey := "sigo:meta:catalog"
+	var cachedData map[string]any
+	if s.cache.Get(cacheKey, &cachedData) {
+		writeJSON(w, 200, cachedData)
+		return
+	}
+
 	sedes := []Sede{}
 	professionals := []Professional{}
 	chairs := []Chair{}
@@ -98,7 +105,9 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request) {
 	}
 	rows.Close()
 
-	writeJSON(w, 200, map[string]any{"sedes": sedes, "professionals": professionals, "chairs": chairs})
+	res := map[string]any{"sedes": sedes, "professionals": professionals, "chairs": chairs}
+	s.cache.Set(cacheKey, res, 10*time.Minute)
+	writeJSON(w, 200, res)
 }
 
 /* ---------------- Pacientes ---------------- */
@@ -201,6 +210,7 @@ func (s *Server) handleCreatePatient(w http.ResponseWriter, r *http.Request) {
 
 	c := s.currentUser(r)
 	s.audit(c.UserID, c.Name, "CREAR", "patient", p.ID, "paciente "+p.Name)
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 201, p)
 }
 
@@ -286,6 +296,7 @@ func (s *Server) handleUpdatePatient(w http.ResponseWriter, r *http.Request) {
 	p.ID = id
 	c := s.currentUser(r)
 	s.audit(c.UserID, c.Name, "EDITAR", "patient", id, "paciente "+p.Name)
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 200, p)
 }
 
@@ -307,6 +318,7 @@ func (s *Server) handleDeletePatient(w http.ResponseWriter, r *http.Request) {
 	}
 	c := s.currentUser(r)
 	s.audit(c.UserID, c.Name, "BAJA_LOGICA", "patient", id, "paciente "+p.Name)
+	s.cache.Invalidate("sigo:dashboard:")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -524,6 +536,7 @@ func (s *Server) handleCreateAppointment(w http.ResponseWriter, r *http.Request)
 	}
 	c := s.currentUser(r)
 	s.audit(c.UserID, c.Name, "CREAR", "appointment", id, "turno "+in.Date+" "+in.Time)
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 201, map[string]string{"id": id})
 }
 
@@ -572,6 +585,7 @@ func (s *Server) handleUpdateAppointment(w http.ResponseWriter, r *http.Request)
 	}
 	c := s.currentUser(r)
 	s.audit(c.UserID, c.Name, "CAMBIAR_ESTADO", "appointment", id, current+" → "+in.Status)
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 200, map[string]string{"id": id, "status": in.Status})
 }
 
@@ -642,6 +656,7 @@ func (s *Server) handleCreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit(c.UserID, c.Name, "COBRAR", "payment", p.ID, p.Concept)
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 201, p)
 }
 
@@ -681,6 +696,7 @@ func (s *Server) handleCloseCash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit(c.UserID, c.Name, "CERRAR_CAJA", "closure", id, fmt.Sprintf("%d cobros por %.2f", count, total))
+	s.cache.Invalidate("sigo:dashboard:")
 	writeJSON(w, 201, Closure{ID: id, Date: date, Total: total, Count: count, ClosedAt: now, ClosedBy: c.Name})
 }
 
@@ -709,6 +725,14 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		date = today()
 	}
 	sede := r.URL.Query().Get("sede")
+
+	cacheKey := fmt.Sprintf("sigo:dashboard:%s:%s", date, sede)
+	var cachedDashboard Dashboard
+	if s.cache.Get(cacheKey, &cachedDashboard) {
+		writeJSON(w, 200, cachedDashboard)
+		return
+	}
+
 	d := Dashboard{Date: date, Alerts: []Patient{}, TodayAppts: []Appointment{}, RecentPayments: []Payment{}, Upcoming: []Appointment{}}
 
 	s.db.QueryRow(`SELECT COUNT(*) FROM patients`).Scan(&d.Patients)
@@ -792,6 +816,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	s.db.QueryRow(`SELECT COUNT(*), COALESCE(SUM(amount),0) FROM payments WHERE date=? AND closure_id=''`, date).
 		Scan(&d.OpenCashPayments, &d.OpenCashTotal)
 
+	s.cache.Set(cacheKey, d, 30*time.Second)
 	writeJSON(w, 200, d)
 }
 
