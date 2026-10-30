@@ -1,0 +1,82 @@
+name: CI/CD Self-Hosted
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 🧪 CI - Tests & Validación
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: server/go.sum
+
+      - name: Ejecutar Pruebas Unitarias del Backend (Go)
+        run: |
+          cd server
+          go test -v ./...
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Instalar Dependencias del Frontend
+        run: |
+          cd web
+          npm ci
+
+      - name: Compilar Frontend (TypeScript + Vite)
+        run: |
+          cd web
+          npm run build
+
+  deploy:
+    name: 🚀 CD - Despliegue en Servidor Self-Hosted
+    needs: test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Clonar repositorio en el servidor
+        uses: actions/checkout@v4
+
+      - name: Verificar estado de Docker
+        run: |
+          echo "=== Verificando motor de Docker ==="
+          docker --version
+          if docker compose version > /dev/null 2>&1; then
+            echo "✅ Docker Compose V2 detectado: $(docker compose version)"
+          elif command -v docker-compose > /dev/null 2>&1; then
+            echo "✅ Docker Compose V1 detectado: $(docker-compose --version)"
+          else
+            echo "❌ Error: Ni 'docker compose' ni 'docker-compose' se encuentran instalados."
+            exit 1
+          fi
+
+      - name: Ejecutar script de despliegue
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh
+
+      - name: Inspección final de contenedores
+        run: |
+          if docker compose version > /dev/null 2>&1; then
+            docker compose ps
+          else
+            docker-compose ps
+          fi

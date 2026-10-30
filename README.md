@@ -181,6 +181,7 @@ proyecto_odontologo/
 
 Para conocer los detalles metodológicos, normativos y de arquitectura:
 - [Estado Detallado de Implementación](docs/ESTADO-IMPLEMENTACION.md)
+- [Guía de Despliegue CI/CD en Servidor Self-Hosted](docs/DEPLOY-SELF-HOSTED.md)
 - [Matriz de Cumplimiento de Requisitos SRS](docs/ESTADO-IMPLEMENTACION-SRS-PDF.md)
 - [Especificación de Requisitos (SRS)](docs/SRS/SRS-SIGO-Dental.md)
 - [Diseño de Arquitectura y ADRs (SDD)](docs/SDD/README.md)

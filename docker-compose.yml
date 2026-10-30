@@ -1,38 +1,39 @@
 version: '3.8'
 
 services:
-  # PostgreSQL (opcional - comentar si se quiere usar SQLite)
+  # PostgreSQL (Base de datos relacional para producción)
   postgres:
     image: postgres:16-alpine
     container_name: sigo-postgres
     environment:
-      POSTGRES_DB: sigo_dental
-      POSTGRES_USER: sigo
-      POSTGRES_PASSWORD: sigo_password_change_me
+      POSTGRES_DB: ${POSTGRES_DB:-sigo_dental}
+      POSTGRES_USER: ${POSTGRES_USER:-sigo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sigo_password_change_me}
     ports:
-      - "5432:5432"
+      - "${PORT_POSTGRES:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sigo"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sigo}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - sigo-network
+    restart: unless-stopped
 
-  # Backend Go
+  # Backend Go (REST API)
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
     container_name: sigo-backend
     environment:
-      SIGO_DB: postgres://sigo:sigo_password_change_me@postgres:5432/sigo_dental?sslmode=disable
-      SIGO_ADDR: :8080
-      SIGO_JWT_SECRET: sigo-production-secret-change-me
+      SIGO_DB: ${SIGO_DB:-postgres://${POSTGRES_USER:-sigo}:${POSTGRES_PASSWORD:-sigo_password_change_me}@postgres:5432/${POSTGRES_DB:-sigo_dental}?sslmode=disable}
+      SIGO_ADDR: ${SIGO_ADDR:-:8080}
+      SIGO_JWT_SECRET: ${SIGO_JWT_SECRET:-sigo-production-secret-change-me}
     ports:
-      - "8080:8080"
+      - "${PORT_BACKEND:-8080}:8080"
     volumes:
       - backend_data:/app/data
     depends_on:
@@ -42,14 +43,14 @@ services:
       - sigo-network
     restart: unless-stopped
 
-  # Frontend React con nginx
+  # Frontend React (Nginx Web Server)
   frontend:
     build:
       context: ./web
       dockerfile: Dockerfile
     container_name: sigo-frontend
     ports:
-      - "80:80"
+      - "${PORT_FRONTEND:-80}:80"
     depends_on:
       - backend
     networks:
