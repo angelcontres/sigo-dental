@@ -877,7 +877,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := uuid.NewString()
-	_, err = s.db.Exec(`INSERT INTO users (id, name, email, password_hash, role, active, created_at) VALUES (?,?,?,?,?,1,?)`,
+	_, err = s.db.Exec(`INSERT INTO users (id, name, email, password_hash, role, active, created_at) VALUES (?,?,?,?,?,true,?)`,
 		id, in.Name, in.Email, hash, in.Role, nowISO())
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {

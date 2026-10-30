@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -306,31 +307,121 @@ CREATE TABLE IF NOT EXISTS prescriptions (
 CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
 `
 
-func openDB(connStr string) (*sql.DB, error) {
-	var db *sql.DB
+type DB struct {
+	*sql.DB
+	isPostgres bool
+}
+
+type Tx struct {
+	*sql.Tx
+	isPostgres bool
+}
+
+func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
+	return db.DB.Exec(rebind(query, db.isPostgres), args...)
+}
+
+func (db *DB) Query(query string, args ...any) (*sql.Rows, error) {
+	return db.DB.Query(rebind(query, db.isPostgres), args...)
+}
+
+func (db *DB) QueryRow(query string, args ...any) *sql.Row {
+	return db.DB.QueryRow(rebind(query, db.isPostgres), args...)
+}
+
+func (db *DB) Begin() (*Tx, error) {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return &Tx{Tx: tx, isPostgres: db.isPostgres}, nil
+}
+
+func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
+	return tx.Tx.Exec(rebind(query, tx.isPostgres), args...)
+}
+
+func (tx *Tx) Query(query string, args ...any) (*sql.Rows, error) {
+	return tx.Tx.Query(rebind(query, tx.isPostgres), args...)
+}
+
+func (tx *Tx) QueryRow(query string, args ...any) *sql.Row {
+	return tx.Tx.QueryRow(rebind(query, tx.isPostgres), args...)
+}
+
+func rebind(query string, isPostgres bool) string {
+	if !isPostgres {
+		return query
+	}
+
+	var b strings.Builder
+	b.Grow(len(query) + 16)
+	paramIdx := 1
+	inQuote := false
+	var quoteChar byte
+
+	for i := 0; i < len(query); i++ {
+		ch := query[i]
+		if inQuote {
+			b.WriteByte(ch)
+			if ch == quoteChar {
+				// Escape de comillas en SQL ('')
+				if i+1 < len(query) && query[i+1] == quoteChar {
+					b.WriteByte(query[i+1])
+					i++
+				} else {
+					inQuote = false
+				}
+			}
+			continue
+		}
+
+		if ch == '\'' || ch == '"' {
+			inQuote = true
+			quoteChar = ch
+			b.WriteByte(ch)
+			continue
+		}
+
+		if ch == '?' {
+			b.WriteString(fmt.Sprintf("$%d", paramIdx))
+			paramIdx++
+		} else {
+			b.WriteByte(ch)
+		}
+	}
+
+	return b.String()
+}
+
+func openDB(connStr string) (*DB, error) {
+	var rawDB *sql.DB
 	var err error
+	isPostgres := false
 
 	// Detectar si es una cadena de conexión PostgreSQL
 	if strings.Contains(connStr, "postgres://") || strings.Contains(connStr, "@") {
-		// PostgreSQL
-		db, err = sql.Open("postgres", connStr)
+		isPostgres = true
+		rawDB, err = sql.Open("postgres", connStr)
 		if err != nil {
 			return nil, err
 		}
-		db.SetMaxOpenConns(25)
-		db.SetMaxIdleConns(5)
+		rawDB.SetMaxOpenConns(25)
+		rawDB.SetMaxIdleConns(5)
 	} else {
 		// SQLite
 		if err := os.MkdirAll(filepath.Dir(connStr), 0o755); err != nil {
 			return nil, err
 		}
 		dsn := "file:" + filepath.ToSlash(connStr) + "?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)"
-		db, err = sql.Open("sqlite", dsn)
+		rawDB, err = sql.Open("sqlite", dsn)
 		if err != nil {
 			return nil, err
 		}
-		db.SetMaxOpenConns(1)
+		rawDB.SetMaxOpenConns(1)
 	}
+
+	db := &DB{DB: rawDB, isPostgres: isPostgres}
 
 	if err := db.Ping(); err != nil {
 		db.Close()
@@ -352,7 +443,7 @@ func openDB(connStr string) (*sql.DB, error) {
 	return db, nil
 }
 
-func seed(db *sql.DB) error {
+func seed(db *DB) error {
 	var count int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
 		return err

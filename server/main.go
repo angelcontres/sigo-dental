@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +17,7 @@ func env(key, fallback string) string {
 }
 
 type Server struct {
-	db        *sql.DB
+	db        *DB
 	secret    []byte
 	staticDir string
 	metaCache any

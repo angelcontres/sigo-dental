@@ -362,3 +362,44 @@ func TestReportsSummary(t *testing.T) {
 		t.Fatalf("failed to decode reports summary: %v", err)
 	}
 }
+
+func TestRebindPostgres(t *testing.T) {
+	cases := []struct {
+		input    string
+		postgres bool
+		expected string
+	}{
+		{
+			input:    "SELECT * FROM users WHERE email = ?",
+			postgres: false,
+			expected: "SELECT * FROM users WHERE email = ?",
+		},
+		{
+			input:    "SELECT * FROM users WHERE email = ?",
+			postgres: true,
+			expected: "SELECT * FROM users WHERE email = $1",
+		},
+		{
+			input:    "INSERT INTO users (id, name, email, password_hash, role, active, created_at) VALUES (?,?,?,?,?,true,?)",
+			postgres: true,
+			expected: "INSERT INTO users (id, name, email, password_hash, role, active, created_at) VALUES ($1,$2,$3,$4,$5,true,$6)",
+		},
+		{
+			input:    "SELECT * FROM t WHERE col = 'is this ok?' AND val = ?",
+			postgres: true,
+			expected: "SELECT * FROM t WHERE col = 'is this ok?' AND val = $1",
+		},
+		{
+			input:    "UPDATE t SET a = ?, b = ? WHERE id = ?",
+			postgres: true,
+			expected: "UPDATE t SET a = $1, b = $2 WHERE id = $3",
+		},
+	}
+
+	for _, tc := range cases {
+		got := rebind(tc.input, tc.postgres)
+		if got != tc.expected {
+			t.Errorf("rebind(%q, %v) = %q, expected %q", tc.input, tc.postgres, got, tc.expected)
+		}
+	}
+}
