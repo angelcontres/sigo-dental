@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # PostgreSQL (opcional - comentar si se quiere usar SQLite)
+  postgres:
+    image: postgres:16-alpine
+    container_name: sigo-postgres
+    environment:
+      POSTGRES_DB: sigo_dental
+      POSTGRES_USER: sigo
+      POSTGRES_PASSWORD: sigo_password_change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sigo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigo-network
+
+  # Backend Go
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: sigo-backend
+    environment:
+      SIGO_DB: postgres://sigo:sigo_password_change_me@postgres:5432/sigo_dental?sslmode=disable
+      SIGO_ADDR: :8080
+      SIGO_JWT_SECRET: sigo-production-secret-change-me
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sigo-network
+    restart: unless-stopped
+
+  # Frontend React con nginx
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: sigo-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - sigo-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_data:
+
+networks:
+  sigo-network:
+    driver: bridge

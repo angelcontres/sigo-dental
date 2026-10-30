@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Backend Go con SQLite (sin PostgreSQL)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: sigo-backend-dev
+    environment:
+      SIGO_DB: /app/data/sigo.db
+      SIGO_ADDR: :8080
+      SIGO_JWT_SECRET: sigo-dev-secret
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_data:/app/data
+      - ./server:/app  # Para desarrollo con hot reload
+    networks:
+      - sigo-network
+    restart: unless-stopped
+
+  # Frontend React con nginx
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: sigo-frontend-dev
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - sigo-network
+    restart: unless-stopped
+
+volumes:
+  backend_data:
+
+networks:
+  sigo-network:
+    driver: bridge

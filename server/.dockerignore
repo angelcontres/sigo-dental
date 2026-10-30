@@ -1,0 +1,35 @@
+# Binarios
+sigo-api
+sigo-api.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Datos
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Go
+*.mod
+*.sum
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test
+*_test.go

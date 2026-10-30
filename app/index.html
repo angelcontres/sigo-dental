@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SIGO-Dental — prototipo MVP de gestión odontológica en una hora.">
+  <title>SIGO-Dental · MVP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">🦷</div>
+        <div class="brand-text">
+          <strong>SIGO<span>Dental</span></strong>
+          <small>MVP · 1 hora</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <button class="nav-item active" data-view="dashboard" type="button">
+          <span class="nav-icon" aria-hidden="true">▦</span><span>Panel</span>
+        </button>
+        <button class="nav-item" data-view="pacientes" type="button">
+          <span class="nav-icon" aria-hidden="true">👥</span><span>Pacientes</span>
+        </button>
+        <button class="nav-item" data-view="agenda" type="button">
+          <span class="nav-icon" aria-hidden="true">🗓️</span><span>Agenda</span>
+        </button>
+        <button class="nav-item" data-view="odontograma" type="button">
+          <span class="nav-icon" aria-hidden="true">🦷</span><span>Odontograma</span>
+        </button>
+        <button class="nav-item" data-view="caja" type="button">
+          <span class="nav-icon" aria-hidden="true">💳</span><span>Caja</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        Prototipo local.<br>Los datos se guardan en este navegador.
+      </div>
+      <button class="btn btn-ghost btn-block" id="resetBtn" type="button">↺ Reiniciar demo</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-heading">
+          <h1 id="viewTitle">Panel</h1>
+          <p id="viewSubtitle">Resumen del día</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="today" id="todayLabel"></span>
+          <button class="btn btn-primary" id="quickPatientBtn" type="button">+ Paciente</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- PANEL -->
+        <section id="view-dashboard" class="view active">
+          <div class="stats-grid">
+            <article class="card stat">
+              <span class="stat-label">Pacientes</span>
+              <strong class="stat-value" id="statPatients">0</strong>
+              <span class="stat-hint">registrados</span>
+            </article>
+            <article class="card stat">
+              <span class="stat-label">Turnos de hoy</span>
+              <strong class="stat-value" id="statAppointments">0</strong>
+              <span class="stat-hint" id="statPendingHint">0 pendientes</span>
+            </article>
+            <article class="card stat">
+              <span class="stat-label">Cobrado hoy</span>
+              <strong class="stat-value" id="statCollected">$0</strong>
+              <span class="stat-hint">caja abierta + cerrada</span>
+            </article>
+            <article class="card stat stat-alert">
+              <span class="stat-label">Alertas médicas</span>
+              <strong class="stat-value" id="statAlerts">0</strong>
+              <span class="stat-hint">pacientes con alerta</span>
+            </article>
+          </div>
+
+          <div class="grid-2">
+            <section class="card">
+              <div class="card-head">
+                <h2>Turnos de hoy</h2>
+                <button class="link-btn" data-view-jump="agenda" type="button">Ver agenda →</button>
+              </div>
+              <div id="dashboardAppointments" class="list"></div>
+            </section>
+
+            <section class="card">
+              <div class="card-head">
+                <h2>Alertas médicas</h2>
+                <span class="pill" id="dashboardAlertCount">0</span>
+              </div>
+              <div id="dashboardAlerts" class="list"></div>
+            </section>
+          </div>
+
+          <section class="card">
+            <div class="card-head">
+              <h2>Últimos cobros</h2>
+              <button class="link-btn" data-view-jump="caja" type="button">Ir a caja →</button>
+            </div>
+            <div id="dashboardPayments" class="list"></div>
+          </section>
+        </section>
+
+        <!-- PACIENTES -->
+        <section id="view-pacientes" class="view">
+          <div class="toolbar">
+            <input id="patientSearch" class="input search" type="search" placeholder="Buscar por nombre o documento…" autocomplete="off">
+            <button class="btn btn-primary" id="newPatientBtn" type="button">+ Nuevo paciente</button>
+          </div>
+
+          <div class="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Documento</th>
+                  <th>Edad</th>
+                  <th>Teléfono</th>
+                  <th>Alerta</th>
+                  <th class="th-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="patientsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- AGENDA -->
+        <section id="view-agenda" class="view">
+          <div class="toolbar">
+            <label class="field-inline">
+              <span>Fecha</span>
+              <input type="date" id="appointmentDate" class="input">
+            </label>
+            <button class="btn btn-primary" id="newAppointmentBtn" type="button">+ Nuevo turno</button>
+          </div>
+
+          <div class="card table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Paciente</th>
+                  <th>Profesional</th>
+                  <th>Sillón</th>
+                  <th>Estado</th>
+                  <th class="th-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ODONTOGRAMA -->
+        <section id="view-odontograma" class="view">
+          <div class="toolbar toolbar-wrap">
+            <label class="field-inline">
+              <span>Paciente</span>
+              <select id="odontoPatient" class="input"></select>
+            </label>
+            <span class="hint">Hacé clic en un diente para marcar una condición. Se guarda al instante.</span>
+          </div>
+
+          <div class="odonto-layout">
+            <div class="card odonto-card">
+              <div class="legend" id="legend" aria-label="Leyenda de condiciones"></div>
+              <div class="arches" id="arches">
+                <div class="arch">
+                  <div class="arch-title">Arcada superior</div>
+                  <div class="teeth" id="teethUpper"></div>
+                </div>
+                <div class="arch">
+                  <div class="arch-title">Arcada inferior</div>
+                  <div class="teeth" id="teethLower"></div>
+                </div>
+              </div>
+              <p class="muted small">Notación FDI. La equivalencia Universal aparece al seleccionar el diente.</p>
+            </div>
+
+            <aside class="card tooth-panel">
+              <h2 id="toothTitle">Seleccioná un diente</h2>
+              <p id="toothMeta" class="muted small">Elegí un paciente y hacé clic en una pieza.</p>
+
+              <div id="toothForm" class="hidden">
+                <label class="field">
+                  <span>Condición</span>
+                  <select id="toothCondition" class="input">
+                    <option value="">Sin marca</option>
+                    <option value="caries">Caries</option>
+                    <option value="restauracion">Restauración</option>
+                    <option value="endodoncia">Endodoncia</option>
+                    <option value="ausente">Ausente</option>
+                    <option value="corona">Corona</option>
+                    <option value="implante">Implante</option>
+                    <option value="sellante">Sellante</option>
+                  </select>
+                </label>
+
+                <fieldset class="surfaces">
+                  <legend>Superficies</legend>
+                  <label><input type="checkbox" name="surface" value="M"> M</label>
+                  <label><input type="checkbox" name="surface" value="D"> D</label>
+                  <label><input type="checkbox" name="surface" value="O"> O</label>
+                  <label><input type="checkbox" name="surface" value="V"> V</label>
+                  <label><input type="checkbox" name="surface" value="L"> L</label>
+                </fieldset>
+
+                <label class="field">
+                  <span>Nota</span>
+                  <textarea id="toothNote" class="input" rows="3" placeholder="Ej.: caries oclusal profunda"></textarea>
+                </label>
+
+                <div class="row">
+                  <button class="btn btn-primary" id="saveToothBtn" type="button">Guardar</button>
+                  <button class="btn btn-secondary" id="clearToothBtn" type="button">Quitar marca</button>
+                </div>
+                <p class="muted small" id="toothSavedHint"></p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- CAJA -->
+        <section id="view-caja" class="view">
+          <div class="grid-2">
+            <section class="card">
+              <div class="card-head">
+                <h2>Registrar cobro</h2>
+              </div>
+              <form id="paymentForm" class="form-grid">
+                <label class="field field-wide">
+                  <span>Paciente</span>
+                  <select id="paymentPatient" class="input" required></select>
+                </label>
+                <label class="field">
+                  <span>Concepto</span>
+                  <input id="paymentConcept" class="input" required placeholder="Consulta, limpieza…">
+                </label>
+                <label class="field">
+                  <span>Monto</span>
+                  <input id="paymentAmount" class="input" type="number" min="1" step="1" required placeholder="15000">
+                </label>
+                <label class="field">
+                  <span>Medio de pago</span>
+                  <select id="paymentMethod" class="input">
+                    <option>Efectivo</option>
+                    <option>Tarjeta</option>
+                    <option>Transferencia</option>
+                  </select>
+                </label>
+                <button class="btn btn-primary field-wide" type="submit">Registrar cobro</button>
+              </form>
+            </section>
+
+            <section class="card">
+              <div class="card-head">
+                <h2>Caja de hoy</h2>
+                <strong class="cash-total" id="cashTotal">$0</strong>
+              </div>
+              <div id="paymentsList" class="list"></div>
+              <button class="btn btn-danger btn-block" id="closeCashBtn" type="button">Cerrar caja</button>
+            </section>
+          </div>
+
+          <section class="card">
+            <div class="card-head">
+              <h2>Cierres anteriores</h2>
+            </div>
+            <div id="closuresList" class="list"></div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL PACIENTE -->
+  <dialog id="patientDialog" class="modal">
+    <form id="patientForm">
+      <header class="modal-head">
+        <h2 id="patientDialogTitle">Nuevo paciente</h2>
+        <button type="button" class="icon-btn" data-close="patientDialog" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="form-grid">
+        <label class="field">
+          <span>Nombre y apellido *</span>
+          <input id="patientName" class="input" required autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Documento *</span>
+          <input id="patientDoc" class="input" required autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Fecha de nacimiento</span>
+          <input id="patientBirth" class="input" type="date">
+        </label>
+        <label class="field">
+          <span>Teléfono</span>
+          <input id="patientPhone" class="input" autocomplete="off">
+        </label>
+        <label class="field field-wide">
+          <span>Alergias / alertas</span>
+          <input id="patientAllergies" class="input" placeholder="Ej.: Penicilina (severa)">
+        </label>
+        <label class="field field-wide">
+          <span>Notas</span>
+          <textarea id="patientNotes" class="input" rows="2"></textarea>
+        </label>
+      </div>
+      <footer class="modal-actions">
+        <button type="button" class="btn btn-danger hidden" id="patientDeleteBtn">Eliminar</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-secondary" data-close="patientDialog">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- MODAL TURNO -->
+  <dialog id="appointmentDialog" class="modal">
+    <form id="appointmentForm">
+      <header class="modal-head">
+        <h2>Nuevo turno</h2>
+        <button type="button" class="icon-btn" data-close="appointmentDialog" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="form-grid">
+        <label class="field field-wide">
+          <span>Paciente *</span>
+          <select id="appointmentPatient" class="input" required></select>
+        </label>
+        <label class="field">
+          <span>Fecha *</span>
+          <input id="appointmentDateInput" class="input" type="date" required>
+        </label>
+        <label class="field">
+          <span>Hora *</span>
+          <input id="appointmentTime" class="input" type="time" required>
+        </label>
+        <label class="field">
+          <span>Profesional</span>
+          <select id="appointmentProfessional" class="input">
+            <option>Dra. Gómez</option>
+            <option>Dr. Pérez</option>
+            <option>Dra. Ruiz</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Sillón</span>
+          <select id="appointmentChair" class="input">
+            <option>Sillón 1</option>
+            <option>Sillón 2</option>
+            <option>Sillón 3</option>
+          </select>
+        </label>
+        <label class="field field-wide">
+          <span>Motivo</span>
+          <input id="appointmentReason" class="input" placeholder="Control, limpieza, dolor…">
+        </label>
+      </div>
+      <footer class="modal-actions">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-secondary" data-close="appointmentDialog">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear turno</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

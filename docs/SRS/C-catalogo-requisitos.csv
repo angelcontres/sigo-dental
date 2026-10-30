@@ -1,0 +1,66 @@
+ID,Tipo,Modulo,Nombre,Descripcion,Prioridad,Etapa,Estado,Fuente,CasoUso
+RF-01,Funcional,M1 Pacientes,Registro unificado de pacientes,Ficha unica con datos demograficos contacto tutor legal y coberturas.,Must,E1,Borrador,REF-01,UC-01
+RF-02,Funcional,M1 Pacientes,Anamnesis y alertas medicas,Antecedentes estructurados y badges de alerta critica en cabecera.,Must,E1,Borrador,REF-01,UC-02
+RF-03,Funcional,M2 Expediente,Odontograma interactivo,Representacion de 32 y 20 dientes con FDI y Universal y marcado por superficies.,Must,E2,Borrador,REF-01,UC-03
+RF-04,Funcional,M2 Expediente,Periodontograma,Seis sitios por diente con NIC furca movilidad y sangrado.,Should,E2,Borrador,REF-01,UC-04
+RF-05,Funcional,M2 Expediente,Notas SOEP,Bitacora cronologica inmutable con bloqueo y firma.,Must,E2,Borrador,REF-01,
+RF-06,Funcional,M3 Legal,Consentimiento informado digital,Generacion y firma de consentimientos por procedimiento.,Must,E2,Borrador,REF-01,UC-05
+RF-07,Funcional,M4 Tratamientos,Presupuestos multinivel,Presupuestos por fases con honorarios laboratorio descuentos e impuestos.,Must,E2,Borrador,REF-01,UC-06
+RF-08,Funcional,M4 Tratamientos,Aprobacion y tareas,Aprobacion total o parcial que genera tareas agendables.,Must,E2,Borrador,REF-01,UC-07
+RF-09,Funcional,M5 Agenda,Agenda multi-sede,Calendario por sede sillon y profesional.,Must,E1,Borrador,REF-01,UC-08
+RF-10,Funcional,M5 Agenda,Estados de cita,Maquina de estados con historial inmutable.,Must,E1,Borrador,REF-01,UC-09
+RF-11,Funcional,M5 Agenda,Notificaciones automaticas,Confirmaciones y recordatorios 48h y 24h por email WhatsApp y SMS.,Should,E1/E3,Borrador,REF-01,UC-10
+RF-12,Funcional,M6 Finanzas,Punto de venta y facturacion,Pagos mixtos comprobantes e integracion fiscal.,Must,E1/E3,Borrador,REF-01,UC-11
+RF-13,Funcional,M6 Finanzas,Liquidacion de honorarios,Comisiones por profesional y procedimiento.,Should,E3,Borrador,REF-01,
+RF-14,Funcional,M7 Inventario,Descargo automatico de insumos,Deduccion de stock al completar procedimientos segun BOM.,Should,E3,Borrador,REF-01,UC-13
+RF-15,Funcional,M8 Administracion,Usuarios roles y permisos,RBAC granular con MFA y bloqueo por intentos.,Must,E1,Borrador,Derivado,UC-14
+RF-16,Funcional,M8 Administracion,Catalogos y parametrizacion,Catalogos maestros y parametros con vigencia.,Must,E1,Borrador,Derivado,UC-14
+RF-17,Funcional,M6 Finanzas,Apertura y cierre de caja,Cierre ciego con conteo fisico y aprobacion.,Must,E1,Borrador,Derivado,UC-12
+RF-18,Funcional,M9 Gobierno,Auditoria consultable,Log append-only con consulta y exportacion.,Must,E1,Borrador,REF-01,UC-15
+RF-19,Funcional,M1 Pacientes,Busqueda de pacientes,Busqueda tolerante por nombre documento telefono y email.,Must,E1,Borrador,Derivado,UC-01
+RF-20,Funcional,M2 Expediente,Documentos y adjuntos,Radiografias fotos y PDFs con antivirus y versionado.,Should,E2,Borrador,Derivado,
+RF-21,Funcional,M3 Legal,Recetas digitales,Recetas con validacion de alergias e interacciones.,Should,E2,Borrador,Derivado,UC-18
+RF-22,Funcional,M9 Gobierno,Reportes operativos y financieros,Reportes con filtros y exportacion CSV y PDF.,Should,E3,Borrador,Derivado,UC-17
+RF-23,Funcional,M9 Gobierno,Tablero operativo,Indicadores diarios por rol.,Could,E3,Borrador,Derivado,UC-17
+RF-24,Funcional,M9 Gobierno,Portal del paciente PWA,Autogestion de turnos recetas y pagos.,Wont,Roadmap,Fuera de v1,Derivado,
+RF-25,Funcional,M9 Gobierno,Migracion de datos,Importacion controlada con dry-run y rollback.,Should,E1/E4,Borrador,Derivado,UC-16
+RF-26,Funcional,M8 Administracion,Gestion multi-sede,Sedes consultorios sillones y scoping de datos.,Must,E1,Borrador,Derivado,UC-14
+RNF-01,No funcional,Rendimiento,Tiempo de respuesta,p95 menor a 1.5s en expediente y odontograma y menor a 500ms en CRUD.,Must,E4,Borrador,REF-01,TP-27
+RNF-02,No funcional,Disponibilidad,SLA,99.9 por ciento en horario 07 a 21 y 99.5 por ciento 24x7.,Must,E4,Borrador,REF-01,TP-30
+RNF-03,No funcional,Rendimiento,Concurrencia,150 usuarios concurrentes sin degradacion.,Must,E4,Borrador,REF-01,TP-27
+RNF-04,No funcional,Escalabilidad,Escalabilidad horizontal,Backend sin estado y crecimiento a 100k pacientes.,Should,E4,Borrador,Derivado,TP-27
+RNF-05,No funcional,Seguridad,Cifrado,TLS 1.3 y AES-256 en reposo.,Must,E4,Borrador,REF-01,TP-28
+RNF-06,No funcional,Seguridad,Autenticacion y autorizacion,RBAC MFA Argon2id y sesion de 15 minutos.,Must,E1,Borrador,REF-01,TP-19
+RNF-07,No funcional,Seguridad,Auditoria,Registro inmutable de accesos y mutaciones.,Must,E1,Borrador,REF-01,TP-22
+RNF-08,No funcional,Seguridad,Seguridad de aplicacion,OWASP ASVS nivel 2 y SAST y DAST sin hallazgos altos.,Must,E4,Borrador,REF-01,TP-28
+RNF-09,No funcional,Privacidad,Privacidad por diseno,Minimizacion seudonimizacion y derechos del titular.,Must,E4,Borrador,Derivado,TP-28
+RNF-10,No funcional,Seguridad,Gestion de secretos,Credenciales fuera del codigo con rotacion semestral.,Must,E4,Borrador,Derivado,TP-28
+RNF-11,No funcional,Usabilidad,Diseno responsive,1920x1080 1366x768 y tablets de 10.5 pulgadas.,Must,E2,Borrador,REF-01,TP-29
+RNF-12,No funcional,Usabilidad,Navegadores,Ultimas dos versiones de Chrome Firefox Edge y Safari.,Must,E2,Borrador,REF-01,TP-29
+RNF-13,No funcional,Accesibilidad,Accesibilidad,WCAG 2.2 AA con alternativas al color.,Should,E2,Borrador,Derivado,TP-29
+RNF-14,No funcional,Usabilidad,Localizacion,Espanol con formatos de fecha y moneda configurables.,Should,E2,Borrador,Derivado,TP-29
+RNF-15,No funcional,Usabilidad,Usabilidad clinica,Nota SOEP en menos de 3 minutos y hallazgo en menos de 10 segundos.,Should,E4,Borrador,Derivado,UAT-02
+RNF-16,No funcional,Mantenibilidad,Mantenibilidad,Monolito modular cobertura del 80 por ciento y OpenAPI.,Must,E1/E4,Borrador,Derivado,
+RNF-17,No funcional,Operacion,Observabilidad,Metricas logs y trazas con dashboards de SLO.,Should,E4,Borrador,Derivado,TP-30
+RNF-18,No funcional,Capacidad,Capacidad,100k pacientes 1M notas y 500 GB de adjuntos.,Should,E4,Borrador,Derivado,TP-27
+RNF-19,No funcional,Continuidad,Respaldo y recuperacion,RPO de 15 minutos y RTO de 4 horas.,Must,E4,Borrador,Derivado,TP-30
+RNF-20,No funcional,Datos,Retencion y ciclo de vida,Historia clinica 10 anos y auditoria 5 anos.,Must,E4,Borrador,Derivado,
+RNF-21,No funcional,Interoperabilidad,Interoperabilidad,API REST con OpenAPI 3.1 y exportacion CSV.,Should,E3,Borrador,Derivado,
+RNF-22,No funcional,Documentacion,Documentacion tecnica,ADR runbooks API y manual de usuario.,Should,E4,Borrador,Derivado,
+RNF-23,No funcional,Usabilidad,Impresion,Comprobantes en A4 y termica de 80 mm.,Should,E3,Borrador,Derivado,TP-29
+RN-01,Regla de negocio,Clinico,Inmutabilidad clinica,Un procedimiento realizado no se borra y se corrige por adenda.,Must,E2,Borrador,REF-01,TP-06
+RN-02,Regla de negocio,Finanzas,Cierre de caja ciego,El cajero ingresa el conteo antes de ver el total teorico.,Must,E1,Borrador,REF-01,TP-16
+RN-03,Regla de negocio,Agenda,No superposicion de sillones,No puede haber dos citas activas en el mismo sillon y horario.,Must,E1,Borrador,REF-01,TP-12
+RN-04,Regla de negocio,Agenda,No superposicion de profesionales,Un profesional no puede tener dos citas activas simultaneas.,Must,E1,Borrador,Derivado,TP-12
+RN-05,Regla de negocio,Tratamientos,Presupuesto aprobado inmutable,Modificar un presupuesto aprobado genera nueva version.,Must,E2,Borrador,Derivado,TP-10
+RN-06,Regla de negocio,Inventario,Stock no negativo,Un movimiento que deje stock negativo se bloquea salvo autorizacion.,Must,E3,Borrador,Derivado,TP-18
+RN-07,Regla de negocio,Finanzas,Cuadre de pagos,La suma de pagos no puede superar el total.,Must,E1,Borrador,Derivado,TP-15
+RN-08,Regla de negocio,Pacientes,Tutor legal,Un menor de 18 anos requiere tutor para consentimientos y presupuestos.,Must,E1,Borrador,Derivado,TP-02
+RN-09,Regla de negocio,Datos,Baja logica,Las entidades no se eliminan fisicamente.,Must,E1,Borrador,Derivado,TP-01
+RN-10,Regla de negocio,Finanzas,Comprobante emitido inmutable,Se anula con nota de credito y nunca se edita.,Must,E3,Borrador,Derivado,TP-15
+RN-11,Regla de negocio,Finanzas,Comision sobre cobrado,La comision se calcula sobre pagos cobrados.,Should,E3,Borrador,Derivado,TP-17
+RN-12,Regla de negocio,Legal,Consentimiento previo,Los procedimientos invasivos requieren consentimiento vigente.,Must,E2,Borrador,Derivado,TP-09
+RN-13,Regla de negocio,Clinico,Odontograma firmado bloqueado,Un estudio firmado no se edita.,Must,E2,Borrador,Derivado,TP-06
+RN-14,Regla de negocio,Datos,Zona horaria unica,Fechas en UTC y visualizacion en la zona de la sede.,Must,E1,Borrador,Derivado,TP-12
+RN-15,Regla de negocio,Tratamientos,Precio historico,El item conserva el precio vigente al crearse.,Must,E2,Borrador,Derivado,TP-10
+RN-16,Regla de negocio,Clinico,Alertas medicas prevalecen,Ninguna alerta critica puede ocultarse.,Must,E1,Borrador,Derivado,TP-03

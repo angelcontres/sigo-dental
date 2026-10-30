@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+*/dist/
+*.local
+
+# Go binaries and artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server/sigo-api
+server/sigo-api.exe
+sigo-api
+sigo-api.exe
+vendor/
+
+# Database and SQLite data
+*.db
+*.db-shm
+*.db-wal
+server/data/*.db*
+data/*.db*
+
+# Environment and secrets
+.env
+.env*.local
+.env.*
+!.env.example
+
+# IDE and Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Agent / Tool local configs
+.devin/
+
+# Logs and temp
+logs/
+*.log
+.cache/
+.vite-temp/
