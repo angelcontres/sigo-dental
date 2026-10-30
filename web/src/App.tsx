@@ -19,6 +19,7 @@ import { BudgetsPage } from './pages/Budgets';
 import { InventoryPage } from './pages/Inventory';
 import { ConsentsPage } from './pages/Consents';
 import { CommissionsPage } from './pages/Commissions';
+import { ReportsPage } from './pages/Reports';
 import { TOTPPage } from './pages/TOTP';
 import { NotificationsPage } from './pages/Notifications';
 import { InvoicesPage } from './pages/Invoices';
@@ -131,6 +132,14 @@ export default function App() {
           element={
             <RoleGate roles={['admin']}>
               <CommissionsPage />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="reportes"
+          element={
+            <RoleGate roles={['admin']}>
+              <ReportsPage />
             </RoleGate>
           }
         />

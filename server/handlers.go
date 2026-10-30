@@ -107,7 +107,7 @@ func (s *Server) handlePatients(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	sede := strings.TrimSpace(r.URL.Query().Get("sede"))
 
-	query := `SELECT id, name, doc, birth, phone, email, address, sede_id, allergies, notes, created_at FROM patients WHERE 1=1`
+	query := `SELECT id, name, doc, birth, phone, email, address, sede_id, allergies, notes, COALESCE(active, true), COALESCE(insurance, ''), COALESCE(guardian_name, ''), COALESCE(guardian_doc, ''), COALESCE(guardian_phone, ''), COALESCE(guardian_rel, ''), created_at FROM patients WHERE COALESCE(active, true) = true`
 	args := []any{}
 	if q != "" {
 		query += ` AND (LOWER(name) LIKE ? OR doc LIKE ?)`
@@ -130,7 +130,7 @@ func (s *Server) handlePatients(w http.ResponseWriter, r *http.Request) {
 	items := []Patient{}
 	for rows.Next() {
 		var p Patient
-		if err := rows.Scan(&p.ID, &p.Name, &p.Doc, &p.Birth, &p.Phone, &p.Email, &p.Address, &p.SedeID, &p.Allergies, &p.Notes, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Doc, &p.Birth, &p.Phone, &p.Email, &p.Address, &p.SedeID, &p.Allergies, &p.Notes, &p.Active, &p.Insurance, &p.GuardianName, &p.GuardianDoc, &p.GuardianPhone, &p.GuardianRel, &p.CreatedAt); err != nil {
 			writeErr(w, 500, "no se pudieron leer los pacientes")
 			return
 		}
@@ -147,6 +147,12 @@ func validatePatient(p *Patient) string {
 	p.Address = strings.TrimSpace(p.Address)
 	p.Allergies = strings.TrimSpace(p.Allergies)
 	p.Notes = strings.TrimSpace(p.Notes)
+	p.Insurance = strings.TrimSpace(p.Insurance)
+	p.GuardianName = strings.TrimSpace(p.GuardianName)
+	p.GuardianDoc = strings.TrimSpace(p.GuardianDoc)
+	p.GuardianPhone = strings.TrimSpace(p.GuardianPhone)
+	p.GuardianRel = strings.TrimSpace(p.GuardianRel)
+
 	if p.Name == "" || p.Doc == "" {
 		return "nombre y documento son obligatorios"
 	}
@@ -154,8 +160,14 @@ func validatePatient(p *Patient) string {
 		return "elegí una sede"
 	}
 	if p.Birth != "" {
-		if _, err := time.Parse("2006-01-02", p.Birth); err != nil {
+		t, err := time.Parse("2006-01-02", p.Birth)
+		if err != nil {
 			return "fecha de nacimiento inválida"
+		}
+		// RN-08: Menores de 18 requieren tutor legal y teléfono
+		ageYears := time.Since(t).Hours() / (24 * 365.25)
+		if ageYears < 18 && (p.GuardianName == "" || p.GuardianPhone == "") {
+			return "para pacientes menores de 18 años es obligatorio registrar nombre y teléfono del tutor legal"
 		}
 	}
 	return ""
@@ -173,10 +185,11 @@ func (s *Server) handleCreatePatient(w http.ResponseWriter, r *http.Request) {
 	}
 	p.ID = uuid.NewString()
 	p.CreatedAt = nowISO()
+	p.Active = true
 
-	_, err := s.db.Exec(`INSERT INTO patients (id, name, doc, birth, phone, email, address, sede_id, allergies, notes, created_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-		p.ID, p.Name, p.Doc, p.Birth, p.Phone, p.Email, p.Address, p.SedeID, p.Allergies, p.Notes, p.CreatedAt)
+	_, err := s.db.Exec(`INSERT INTO patients (id, name, doc, birth, phone, email, address, sede_id, allergies, notes, active, insurance, guardian_name, guardian_doc, guardian_phone, guardian_rel, created_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		p.ID, p.Name, p.Doc, p.Birth, p.Phone, p.Email, p.Address, p.SedeID, p.Allergies, p.Notes, p.Active, p.Insurance, p.GuardianName, p.GuardianDoc, p.GuardianPhone, p.GuardianRel, p.CreatedAt)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			writeErr(w, 409, "ya existe un paciente con ese documento")
@@ -193,8 +206,8 @@ func (s *Server) handleCreatePatient(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) getPatient(id string) (*Patient, error) {
 	var p Patient
-	err := s.db.QueryRow(`SELECT id, name, doc, birth, phone, email, address, sede_id, allergies, notes, created_at FROM patients WHERE id = ?`, id).
-		Scan(&p.ID, &p.Name, &p.Doc, &p.Birth, &p.Phone, &p.Email, &p.Address, &p.SedeID, &p.Allergies, &p.Notes, &p.CreatedAt)
+	err := s.db.QueryRow(`SELECT id, name, doc, birth, phone, email, address, sede_id, allergies, notes, COALESCE(active, true), COALESCE(insurance, ''), COALESCE(guardian_name, ''), COALESCE(guardian_doc, ''), COALESCE(guardian_phone, ''), COALESCE(guardian_rel, ''), created_at FROM patients WHERE id = ?`, id).
+		Scan(&p.ID, &p.Name, &p.Doc, &p.Birth, &p.Phone, &p.Email, &p.Address, &p.SedeID, &p.Allergies, &p.Notes, &p.Active, &p.Insurance, &p.GuardianName, &p.GuardianDoc, &p.GuardianPhone, &p.GuardianRel, &p.CreatedAt)
 	return &p, err
 }
 
@@ -260,8 +273,8 @@ func (s *Server) handleUpdatePatient(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, msg)
 		return
 	}
-	_, err := s.db.Exec(`UPDATE patients SET name=?, doc=?, birth=?, phone=?, email=?, address=?, sede_id=?, allergies=?, notes=? WHERE id=?`,
-		p.Name, p.Doc, p.Birth, p.Phone, p.Email, p.Address, p.SedeID, p.Allergies, p.Notes, id)
+	_, err := s.db.Exec(`UPDATE patients SET name=?, doc=?, birth=?, phone=?, email=?, address=?, sede_id=?, allergies=?, notes=?, insurance=?, guardian_name=?, guardian_doc=?, guardian_phone=?, guardian_rel=? WHERE id=?`,
+		p.Name, p.Doc, p.Birth, p.Phone, p.Email, p.Address, p.SedeID, p.Allergies, p.Notes, p.Insurance, p.GuardianName, p.GuardianDoc, p.GuardianPhone, p.GuardianRel, id)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			writeErr(w, 409, "ya existe otro paciente con ese documento")
@@ -287,12 +300,13 @@ func (s *Server) handleDeletePatient(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 500, "no se pudo leer el paciente")
 		return
 	}
-	if _, err := s.db.Exec(`DELETE FROM patients WHERE id = ?`, id); err != nil {
-		writeErr(w, 500, "no se pudo eliminar el paciente")
+	// RN-09: Baja lógica en lugar de borrado físico
+	if _, err := s.db.Exec(`UPDATE patients SET active = false WHERE id = ?`, id); err != nil {
+		writeErr(w, 500, "no se pudo dar de baja el paciente")
 		return
 	}
 	c := s.currentUser(r)
-	s.audit(c.UserID, c.Name, "ELIMINAR", "patient", id, "paciente "+p.Name)
+	s.audit(c.UserID, c.Name, "BAJA_LOGICA", "patient", id, "paciente "+p.Name)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -1722,4 +1736,218 @@ func (s *Server) handleCommissions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, 200, commissions)
+}
+
+/* ---------------- Recetas Digitales - RF-21 ---------------- */
+
+func (s *Server) handlePatientPrescriptions(w http.ResponseWriter, r *http.Request) {
+	patientID := r.PathValue("id")
+	rows, err := s.db.Query(`SELECT pr.id, pr.patient_id, p.name, pr.professional_id, COALESCE(prof.name, 'Profesional'), pr.medication, pr.dose, pr.route, pr.frequency, pr.duration, pr.instructions, pr.status, pr.created_at, pr.cancelled_reason
+		FROM prescriptions pr
+		JOIN patients p ON p.id = pr.patient_id
+		LEFT JOIN professionals prof ON prof.id = pr.professional_id
+		WHERE pr.patient_id = ? ORDER BY pr.created_at DESC`, patientID)
+	if err != nil {
+		writeErr(w, 500, "no se pudieron leer las recetas")
+		return
+	}
+	defer rows.Close()
+
+	items := []Prescription{}
+	for rows.Next() {
+		var rx Prescription
+		if err := rows.Scan(&rx.ID, &rx.PatientID, &rx.PatientName, &rx.ProfessionalID, &rx.ProfessionalName, &rx.Medication, &rx.Dose, &rx.Route, &rx.Frequency, &rx.Duration, &rx.Instructions, &rx.Status, &rx.CreatedAt, &rx.CancelledReason); err == nil {
+			items = append(items, rx)
+		}
+	}
+	writeJSON(w, 200, items)
+}
+
+func (s *Server) handleCreatePrescription(w http.ResponseWriter, r *http.Request) {
+	patientID := r.PathValue("id")
+	patient, err := s.getPatient(patientID)
+	if err != nil {
+		writeErr(w, 404, "paciente no encontrado")
+		return
+	}
+
+	var in struct {
+		ProfessionalID string `json:"professionalId"`
+		Medication     string `json:"medication"`
+		Dose           string `json:"dose"`
+		Route          string `json:"route"`
+		Frequency      string `json:"frequency"`
+		Duration       string `json:"duration"`
+		Instructions   string `json:"instructions"`
+		IgnoreWarning  bool   `json:"ignoreWarning"`
+	}
+	if err := decode(r, &in); err != nil {
+		writeErr(w, 400, "datos inválidos")
+		return
+	}
+	if in.Medication == "" || in.Dose == "" || in.Frequency == "" || in.Duration == "" {
+		writeErr(w, 400, "medicamento, dosis, frecuencia y duración son obligatorios")
+		return
+	}
+
+	// RF-02 y RF-21: Alerta médica cruzada de alergias del paciente
+	if !in.IgnoreWarning && patient.Allergies != "" {
+		medLower := strings.ToLower(in.Medication)
+		allLower := strings.ToLower(patient.Allergies)
+		if (strings.Contains(medLower, "amoxi") && strings.Contains(allLower, "penicil")) ||
+			strings.Contains(allLower, medLower) ||
+			strings.Contains(medLower, allLower) {
+			writeJSON(w, 409, map[string]any{
+				"error":   "ALERTA_ALERGIA",
+				"message": fmt.Sprintf("¡Alerta médica! El paciente presenta alergia registrada: '%s'. Confirme si desea prescribir con justificación profesional.", patient.Allergies),
+			})
+			return
+		}
+	}
+
+	c := s.currentUser(r)
+	profID := in.ProfessionalID
+	if profID == "" {
+		profID = "pr1"
+	}
+
+	id := uuid.NewString()
+	route := in.Route
+	if route == "" {
+		route = "Oral"
+	}
+
+	_, err = s.db.Exec(`INSERT INTO prescriptions (id, patient_id, professional_id, medication, dose, route, frequency, duration, instructions, status, created_at, cancelled_reason)
+		VALUES (?,?,?,?,?,?,?,?,?,'activa',?,'')`,
+		id, patientID, profID, in.Medication, in.Dose, route, in.Frequency, in.Duration, in.Instructions, nowISO())
+	if err != nil {
+		writeErr(w, 500, "no se pudo registrar la receta")
+		return
+	}
+
+	s.audit(c.UserID, c.Name, "CREAR", "prescription", id, fmt.Sprintf("paciente %s: %s %s", patient.Name, in.Medication, in.Dose))
+	writeJSON(w, 201, Prescription{
+		ID:             id,
+		PatientID:      patientID,
+		PatientName:    patient.Name,
+		ProfessionalID: profID,
+		Medication:     in.Medication,
+		Dose:           in.Dose,
+		Route:          route,
+		Frequency:      in.Frequency,
+		Duration:       in.Duration,
+		Instructions:   in.Instructions,
+		Status:         "activa",
+		CreatedAt:      nowISO(),
+	})
+}
+
+func (s *Server) handleCancelPrescription(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var in struct {
+		Reason string `json:"reason"`
+	}
+	if err := decode(r, &in); err != nil || in.Reason == "" {
+		writeErr(w, 400, "el motivo de anulación es obligatorio")
+		return
+	}
+
+	c := s.currentUser(r)
+	res, err := s.db.Exec(`UPDATE prescriptions SET status = 'anulada', cancelled_reason = ? WHERE id = ?`, in.Reason, id)
+	if err != nil {
+		writeErr(w, 500, "no se pudo anular la receta")
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 404, "receta no encontrada")
+		return
+	}
+
+	s.audit(c.UserID, c.Name, "ANULAR", "prescription", id, "motivo: "+in.Reason)
+	writeJSON(w, 200, map[string]string{"status": "anulada", "id": id})
+}
+
+/* ---------------- Reportes Operativos y Financieros - RF-22 ---------------- */
+
+func (s *Server) handleReportsSummary(w http.ResponseWriter, r *http.Request) {
+	from := strings.TrimSpace(r.URL.Query().Get("from"))
+	to := strings.TrimSpace(r.URL.Query().Get("to"))
+	sede := strings.TrimSpace(r.URL.Query().Get("sede"))
+
+	if from == "" {
+		from = time.Now().AddDate(0, -1, 0).Format("2006-01-02")
+	}
+	if to == "" {
+		to = time.Now().Format("2006-01-02")
+	}
+
+	summary := ReportsSummary{
+		From:                     from,
+		To:                       to,
+		RevenueByMethod:          []NameValue{},
+		AppointmentsByStatus:     []NameValue{},
+		ProductionByProfessional: []ProfessionalProduction{},
+	}
+
+	// 1. Ingresos y pagos
+	payQuery := `SELECT COALESCE(SUM(amount), 0), COUNT(id) FROM payments WHERE date >= ? AND date <= ?`
+	payArgs := []any{from, to}
+	_ = s.db.QueryRow(payQuery, payArgs...).Scan(&summary.TotalRevenue, &summary.TotalPayments)
+
+	// 2. Ingresos por método de pago
+	methodQuery := `SELECT method, COALESCE(SUM(amount), 0) FROM payments WHERE date >= ? AND date <= ? GROUP BY method`
+	rows, err := s.db.Query(methodQuery, from, to)
+	if err == nil {
+		for rows.Next() {
+			var nv NameValue
+			if rows.Scan(&nv.Name, &nv.Value) == nil {
+				summary.RevenueByMethod = append(summary.RevenueByMethod, nv)
+			}
+		}
+		rows.Close()
+	}
+
+	// 3. Citas por estado
+	apptQuery := `SELECT a.status, COUNT(a.id) FROM appointments a WHERE a.date >= ? AND a.date <= ?`
+	apptArgs := []any{from, to}
+	if sede != "" {
+		apptQuery += ` AND a.chair_id IN (SELECT id FROM chairs WHERE sede_id = ?)`
+		apptArgs = append(apptArgs, sede)
+	}
+	apptQuery += ` GROUP BY a.status`
+	rows, err = s.db.Query(apptQuery, apptArgs...)
+	if err == nil {
+		for rows.Next() {
+			var nv NameValue
+			var count int
+			if rows.Scan(&nv.Name, &count) == nil {
+				nv.Value = float64(count)
+				summary.AppointmentsByStatus = append(summary.AppointmentsByStatus, nv)
+			}
+		}
+		rows.Close()
+	}
+
+	// 4. Producción por profesional
+	prodQuery := `SELECT pr.id, pr.name, COUNT(a.id) as appts, COALESCE(SUM(p.amount), 0) as total
+		FROM professionals pr
+		LEFT JOIN appointments a ON a.professional_id = pr.id AND a.date >= ? AND a.date <= ?
+		LEFT JOIN payments p ON p.patient_id = a.patient_id AND p.date = a.date
+		GROUP BY pr.id, pr.name`
+	rows, err = s.db.Query(prodQuery, from, to)
+	if err == nil {
+		for rows.Next() {
+			var pp ProfessionalProduction
+			if rows.Scan(&pp.ProfessionalID, &pp.ProfessionalName, &pp.Appointments, &pp.TotalBilled) == nil {
+				summary.ProductionByProfessional = append(summary.ProductionByProfessional, pp)
+			}
+		}
+		rows.Close()
+	}
+
+	// 5. Nuevos pacientes
+	_ = s.db.QueryRow(`SELECT COUNT(id) FROM patients WHERE substr(created_at, 1, 10) >= ? AND substr(created_at, 1, 10) <= ?`, from, to).Scan(&summary.NewPatientsCount)
+
+	writeJSON(w, 200, summary)
 }

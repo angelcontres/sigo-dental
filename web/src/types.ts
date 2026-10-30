@@ -20,6 +20,12 @@ export interface Patient {
   sedeId: string;
   allergies: string;
   notes: string;
+  active?: boolean;
+  insurance?: string;
+  guardianName?: string;
+  guardianDoc?: string;
+  guardianPhone?: string;
+  guardianRel?: string;
   createdAt: string;
 }
 
@@ -274,4 +280,46 @@ export interface PatientAttachment {
   notes: string;
   createdAt: string;
   createdBy: string;
+}
+
+// Recetas digitales - RF-21
+export interface Prescription {
+  id: string;
+  patientId: string;
+  patientName?: string;
+  professionalId: string;
+  professionalName?: string;
+  medication: string;
+  dose: string;
+  route: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+  status: 'activa' | 'anulada' | 'dispensada';
+  createdAt: string;
+  cancelledReason?: string;
+}
+
+// Reportes operativos y financieros - RF-22
+export interface ReportsSummary {
+  from: string;
+  to: string;
+  totalRevenue: number;
+  totalPayments: number;
+  revenueByMethod: NameValue[];
+  appointmentsByStatus: NameValue[];
+  productionByProfessional: ProfessionalProduction[];
+  newPatientsCount: number;
+}
+
+export interface NameValue {
+  name: string;
+  value: number;
+}
+
+export interface ProfessionalProduction {
+  professionalId: string;
+  professionalName: string;
+  appointments: number;
+  totalBilled: number;
 }

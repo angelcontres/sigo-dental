@@ -22,6 +22,8 @@ import type {
   Notification as NotificationType,
   Invoice,
   PatientAttachment,
+  Prescription,
+  ReportsSummary,
 } from './types';
 
 const TOKEN_KEY = 'sigo.token';
@@ -315,4 +317,31 @@ export const api = {
 
   // Caja - RN-02 (cierre ciego)
   cashCount: () => request<{ count: number }>('/cash/count'),
+
+  // Recetas digitales - RF-21
+  prescriptions: (patientId: string) =>
+    request<Prescription[]>(`/patients/${patientId}/prescriptions`),
+  createPrescription: (patientId: string, input: {
+    professionalId?: string;
+    medication: string;
+    dose: string;
+    route?: string;
+    frequency: string;
+    duration: string;
+    instructions?: string;
+    ignoreWarning?: boolean;
+  }) =>
+    request<Prescription>(`/patients/${patientId}/prescriptions`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  cancelPrescription: (prescriptionId: string, reason: string) =>
+    request<{ status: string; id: string }>(`/prescriptions/${prescriptionId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // Reportes operativos y financieros - RF-22
+  reportsSummary: (from?: string, to?: string, sede?: string) =>
+    request<ReportsSummary>(`/reports/summary${query({ from, to, sede })}`),
 };

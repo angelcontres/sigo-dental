@@ -54,6 +54,12 @@ CREATE TABLE IF NOT EXISTS patients (
 	sede_id TEXT NOT NULL REFERENCES sedes(id),
 	allergies TEXT NOT NULL DEFAULT '',
 	notes TEXT NOT NULL DEFAULT '',
+	active BOOLEAN NOT NULL DEFAULT true,
+	insurance TEXT NOT NULL DEFAULT '',
+	guardian_name TEXT NOT NULL DEFAULT '',
+	guardian_doc TEXT NOT NULL DEFAULT '',
+	guardian_phone TEXT NOT NULL DEFAULT '',
+	guardian_rel TEXT NOT NULL DEFAULT '',
 	created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_patients_doc ON patients(doc);
@@ -282,6 +288,22 @@ CREATE TABLE IF NOT EXISTS patient_attachments (
 );
 CREATE INDEX IF NOT EXISTS idx_patient_attachments_patient ON patient_attachments(patient_id);
 CREATE INDEX IF NOT EXISTS idx_patient_attachments_type ON patient_attachments(type);
+
+CREATE TABLE IF NOT EXISTS prescriptions (
+	id TEXT PRIMARY KEY,
+	patient_id TEXT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+	professional_id TEXT NOT NULL REFERENCES professionals(id),
+	medication TEXT NOT NULL,
+	dose TEXT NOT NULL,
+	route TEXT NOT NULL DEFAULT 'Oral',
+	frequency TEXT NOT NULL,
+	duration TEXT NOT NULL,
+	instructions TEXT NOT NULL DEFAULT '',
+	status TEXT NOT NULL DEFAULT 'activa',
+	created_at TEXT NOT NULL,
+	cancelled_reason TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
 `
 
 func openDB(connStr string) (*sql.DB, error) {
@@ -318,6 +340,15 @@ func openDB(connStr string) (*sql.DB, error) {
 		db.Close()
 		return nil, err
 	}
+
+	// Migraciones idempotentes para columnas extendidas de pacientes (RN-08, RN-09)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN active BOOLEAN NOT NULL DEFAULT true`)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN insurance TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN guardian_name TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN guardian_doc TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN guardian_phone TEXT NOT NULL DEFAULT ''`)
+	_, _ = db.Exec(`ALTER TABLE patients ADD COLUMN guardian_rel TEXT NOT NULL DEFAULT ''`)
+
 	return db, nil
 }
 

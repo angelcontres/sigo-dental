@@ -27,6 +27,11 @@
 | **RF-14** | Descargo de insumos | ✅ IMPLEMENTADO COMPLETO | Inventario, movimientos de stock, alertas de stock bajo |
 | **RF-15** | Usuarios y roles | ✅ MVP | Admin, odontólogo, recepción |
 | **RF-18** | Auditoría y bitácora | ✅ MVP | Log inmutable de todas las acciones |
+| **RF-20** | Adjuntos y radiografías | ✅ IMPLEMENTADO COMPLETO | Carga, galería y previsualización en ficha del paciente |
+| **RF-21** | Recetas digitales | ✅ IMPLEMENTADO COMPLETO | Prescripción médica, alerta cruzada de alergias e impresión |
+| **RF-22** | Reportes operativos y financieros | ✅ IMPLEMENTADO COMPLETO | Métricas por rango de fechas, producción profesional y exportación CSV |
+| **RN-08** | Tutor legal para menores de 18 | ✅ IMPLEMENTADO COMPLETO | Validación obligatoria en ficha de pacientes |
+| **RN-09** | Baja lógica de pacientes | ✅ IMPLEMENTADO COMPLETO | Soft delete con resguardo de auditoría y trazabilidad |
 
 ### ⚠️ Requisitos Parcialmente Implementados
 

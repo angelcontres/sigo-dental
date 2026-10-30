@@ -12,17 +12,23 @@ type User struct {
 }
 
 type Patient struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Doc       string `json:"doc"`
-	Birth     string `json:"birth"`
-	Phone     string `json:"phone"`
-	Email     string `json:"email"`
-	Address   string `json:"address"`
-	SedeID    string `json:"sedeId"`
-	Allergies string `json:"allergies"`
-	Notes     string `json:"notes"`
-	CreatedAt string `json:"createdAt"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Doc           string `json:"doc"`
+	Birth         string `json:"birth"`
+	Phone         string `json:"phone"`
+	Email         string `json:"email"`
+	Address       string `json:"address"`
+	SedeID        string `json:"sedeId"`
+	Allergies     string `json:"allergies"`
+	Notes         string `json:"notes"`
+	Active        bool   `json:"active"`
+	Insurance     string `json:"insurance"`
+	GuardianName  string `json:"guardianName"`
+	GuardianDoc   string `json:"guardianDoc"`
+	GuardianPhone string `json:"guardianPhone"`
+	GuardianRel   string `json:"guardianRel"`
+	CreatedAt     string `json:"createdAt"`
 }
 
 type Professional struct {
@@ -301,4 +307,46 @@ type Invoice struct {
 	Status      string  `json:"status"` // draft, issued, cancelled
 	CreatedAt   string  `json:"createdAt"`
 	IssuedAt    string  `json:"issuedAt"`
+}
+
+// Recetas digitales - RF-21
+type Prescription struct {
+	ID               string `json:"id"`
+	PatientID        string `json:"patientId"`
+	PatientName      string `json:"patientName,omitempty"`
+	ProfessionalID   string `json:"professionalId"`
+	ProfessionalName string `json:"professionalName,omitempty"`
+	Medication       string `json:"medication"`
+	Dose             string `json:"dose"`
+	Route            string `json:"route"`
+	Frequency        string `json:"frequency"`
+	Duration         string `json:"duration"`
+	Instructions     string `json:"instructions"`
+	Status           string `json:"status"` // activa, anulada, dispensada
+	CreatedAt        string `json:"createdAt"`
+	CancelledReason  string `json:"cancelledReason,omitempty"`
+}
+
+// Reportes operativos y financieros - RF-22
+type ReportsSummary struct {
+	From                     string                   `json:"from"`
+	To                       string                   `json:"to"`
+	TotalRevenue             float64                  `json:"totalRevenue"`
+	TotalPayments            int                      `json:"totalPayments"`
+	RevenueByMethod          []NameValue              `json:"revenueByMethod"`
+	AppointmentsByStatus     []NameValue              `json:"appointmentsByStatus"`
+	ProductionByProfessional []ProfessionalProduction `json:"productionByProfessional"`
+	NewPatientsCount         int                      `json:"newPatientsCount"`
+}
+
+type NameValue struct {
+	Name  string  `json:"name"`
+	Value float64 `json:"value"`
+}
+
+type ProfessionalProduction struct {
+	ProfessionalID   string  `json:"professionalId"`
+	ProfessionalName string  `json:"professionalName"`
+	Appointments     int     `json:"appointments"`
+	TotalBilled      float64 `json:"totalBilled"`
 }

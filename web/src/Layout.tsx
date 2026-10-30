@@ -21,6 +21,7 @@ import {
   IconBell,
   IconShield,
   IconPeriodontal,
+  IconReport,
 } from './icons';
 import type { Role } from './types';
 
@@ -52,6 +53,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { to: '/inventario', label: 'Inventario', icon: <IconBox />, roles: ['admin', 'recepcion'] },
       { to: '/facturacion', label: 'Facturación', icon: <IconInvoice />, roles: ['admin', 'recepcion'] },
       { to: '/comisiones', label: 'Comisiones', icon: <IconPercentage />, roles: ['admin'] },
+      { to: '/reportes', label: 'Reportes', icon: <IconReport />, roles: ['admin'] },
       { to: '/notificaciones', label: 'Notificaciones', icon: <IconBell />, roles: ['admin', 'recepcion'] },
       { to: '/auditoria', label: 'Auditoría', icon: <IconAudit />, roles: ['admin'] },
       { to: '/usuarios', label: 'Usuarios', icon: <IconUsers />, roles: ['admin'] },
@@ -73,6 +75,7 @@ const TITLES: Record<string, { title: string; subtitle: string }> = {
   '/inventario': { title: 'Inventario', subtitle: 'Control de insumos, stock y movimientos' },
   '/facturacion': { title: 'Facturación', subtitle: 'Comprobantes y facturación electrónica' },
   '/comisiones': { title: 'Comisiones', subtitle: 'Liquidación de honorarios profesionales' },
+  '/reportes': { title: 'Reportes', subtitle: 'Métricas operativas, financieras y producción' },
   '/notificaciones': { title: 'Notificaciones', subtitle: 'Recordatorios automáticos y avisos' },
   '/auditoria': { title: 'Auditoría', subtitle: 'Trazabilidad y registro inmutable de acciones' },
   '/usuarios': { title: 'Usuarios', subtitle: 'Equipo de profesionales y roles de acceso' },

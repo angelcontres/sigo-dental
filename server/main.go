@@ -123,9 +123,17 @@ func main() {
 	mux.HandleFunc("POST /api/invoices", s.auth(s.handleCreateInvoice))
 	mux.HandleFunc("POST /api/invoices/{id}/issue", s.auth(s.handleIssueInvoice))
 
-	// Adjuntos de pacientes (radiografías, fotos, documentos)
+	// Adjuntos de pacientes (radiografías, fotos, documentos) - RF-20
 	mux.HandleFunc("GET /api/patients/{id}/attachments", s.auth(s.handlePatientAttachments))
 	mux.HandleFunc("POST /api/patients/{id}/attachments", s.auth(s.handleCreatePatientAttachment))
+
+	// Recetas digitales - RF-21
+	mux.HandleFunc("GET /api/patients/{id}/prescriptions", s.auth(s.handlePatientPrescriptions))
+	mux.HandleFunc("POST /api/patients/{id}/prescriptions", s.auth(requireRole("admin", "odontologo")(s.handleCreatePrescription)))
+	mux.HandleFunc("POST /api/prescriptions/{id}/cancel", s.auth(requireRole("admin", "odontologo")(s.handleCancelPrescription)))
+
+	// Reportes operativos y financieros - RF-22
+	mux.HandleFunc("GET /api/reports/summary", s.auth(requireRole("admin")(s.handleReportsSummary)))
 
 	mux.Handle("/", spaHandler(staticDir))
 

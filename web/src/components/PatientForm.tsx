@@ -15,6 +15,11 @@ interface FormState {
   sedeId: string;
   allergies: string;
   notes: string;
+  insurance: string;
+  guardianName: string;
+  guardianDoc: string;
+  guardianPhone: string;
+  guardianRel: string;
 }
 
 export function PatientForm({
@@ -39,6 +44,11 @@ export function PatientForm({
     sedeId: initial?.sedeId ?? sedes[0]?.id ?? '',
     allergies: initial?.allergies ?? '',
     notes: initial?.notes ?? '',
+    insurance: initial?.insurance ?? '',
+    guardianName: initial?.guardianName ?? '',
+    guardianDoc: initial?.guardianDoc ?? '',
+    guardianPhone: initial?.guardianPhone ?? '',
+    guardianRel: initial?.guardianRel ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +56,15 @@ export function PatientForm({
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  // RN-08: Validación de minoría de edad (< 18 años)
+  const isMinor = form.birth
+    ? (() => {
+        const diff = Date.now() - new Date(form.birth).getTime();
+        const age = diff / (1000 * 60 * 60 * 24 * 365.25);
+        return age < 18;
+      })()
+    : false;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -88,6 +107,18 @@ export function PatientForm({
       return;
     }
 
+    // RN-08: Menor de 18 años requiere tutor
+    if (isMinor) {
+      if (!form.guardianName.trim()) {
+        setError('RN-08: Pacientes menores de 18 años requieren el nombre del tutor legal.');
+        return;
+      }
+      if (!form.guardianPhone.trim()) {
+        setError('RN-08: Se requiere el teléfono de contacto del tutor legal.');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const saved = initial
@@ -117,7 +148,7 @@ export function PatientForm({
             aria-required="true"
           />
         </Field>
-        <Field label="Documento" required>
+        <Field label="Documento (DNI/CI)" required>
           <input
             className="input"
             value={form.doc}
@@ -174,23 +205,76 @@ export function PatientForm({
             autoComplete="street-address"
           />
         </Field>
+        <Field label="Cobertura / Seguro Dental">
+          <input
+            className="input"
+            value={form.insurance}
+            placeholder="Ej.: OSDE 210, Particular, Swiss Medical"
+            onChange={(event) => update('insurance', event.target.value)}
+          />
+        </Field>
         <Field
-          label="Alergias / alertas"
+          label="Alergias / Alertas médicas"
           wide
-          hint="Se muestra como alerta médica en el panel y en la agenda."
+          hint="Alerta crítica: se valida automáticamente al prescribir medicamentos."
         >
           <input
             className="input"
             value={form.allergies}
-            placeholder="Ej.: Penicilina (severa)"
+            placeholder="Ej.: Penicilina (severa), Látex, AINEs"
             onChange={(event) => update('allergies', event.target.value)}
-            aria-describedby="allergies-hint"
           />
         </Field>
-        <Field label="Notas" wide>
+
+        {/* RN-08: Tutor legal para menores de 18 años */}
+        {isMinor && (
+          <div className="card" style={{ gridColumn: '1 / -1', background: '#f8fafc', border: '1px solid #cbd5e1' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>
+              👶 Datos del Tutor Legal (Requerido para menores de 18 años - RN-08)
+            </h4>
+            <div className="form-grid">
+              <Field label="Nombre del tutor" required>
+                <input
+                  className="input"
+                  value={form.guardianName}
+                  placeholder="Ej. Juan Pérez"
+                  onChange={(e) => update('guardianName', e.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="Documento del tutor">
+                <input
+                  className="input"
+                  value={form.guardianDoc}
+                  placeholder="DNI o Cédula"
+                  onChange={(e) => update('guardianDoc', e.target.value)}
+                />
+              </Field>
+              <Field label="Teléfono de contacto" required>
+                <input
+                  className="input"
+                  value={form.guardianPhone}
+                  placeholder="Ej. +54 9 11 5555-5555"
+                  onChange={(e) => update('guardianPhone', e.target.value)}
+                  required
+                />
+              </Field>
+              <Field label="Parentesco">
+                <input
+                  className="input"
+                  value={form.guardianRel}
+                  placeholder="Ej. Madre, Padre, Tutor legal"
+                  onChange={(e) => update('guardianRel', e.target.value)}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        <Field label="Notas clínicas adicionales" wide>
           <textarea
             className="input"
-            rows={3}
+            rows={2}
             value={form.notes}
             onChange={(event) => update('notes', event.target.value)}
           />
@@ -203,7 +287,7 @@ export function PatientForm({
           Cancelar
         </button>
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Guardando…' : 'Guardar'}
+          {saving ? 'Guardando…' : 'Guardar paciente'}
         </button>
       </div>
     </form>

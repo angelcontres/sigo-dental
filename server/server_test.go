@@ -195,3 +195,170 @@ func TestTreatmentBudgetsAndItems(t *testing.T) {
 		t.Fatalf("expected 200 on approve, got %d (body: %s)", recApprove.Code, recApprove.Body.String())
 	}
 }
+
+func TestPrescriptionsAndAllergyCheck(t *testing.T) {
+	s, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	token, _ := s.issueToken(&User{ID: "u1", Name: "Admin", Role: "admin"})
+
+	// Create a patient with known allergy
+	patientBody, _ := json.Marshal(map[string]any{
+		"name":      "Paciente Con Alergia",
+		"doc":       "DOC-ALERGIA-1",
+		"sedeId":    "s1",
+		"allergies": "Alergia severa a Penicilina",
+	})
+	reqPat := httptest.NewRequest("POST", "/api/patients", bytes.NewReader(patientBody))
+	reqPat.Header.Set("Authorization", "Bearer "+token)
+	recPat := httptest.NewRecorder()
+	s.auth(s.handleCreatePatient)(recPat, reqPat)
+
+	if recPat.Code != http.StatusCreated {
+		t.Fatalf("failed to create patient: %d (%s)", recPat.Code, recPat.Body.String())
+	}
+
+	var patient Patient
+	_ = json.NewDecoder(recPat.Body).Decode(&patient)
+
+	// Attempt to prescribe Amoxicilina (should trigger 409 ALERTA_ALERGIA)
+	rxBody, _ := json.Marshal(map[string]any{
+		"medication": "Amoxicilina 500mg",
+		"dose":       "500mg",
+		"route":      "Oral",
+		"frequency":  "Cada 8 horas",
+		"duration":   "7 días",
+	})
+	reqRx := httptest.NewRequest("POST", "/api/patients/"+patient.ID+"/prescriptions", bytes.NewReader(rxBody))
+	reqRx.SetPathValue("id", patient.ID)
+	reqRx.Header.Set("Authorization", "Bearer "+token)
+	recRx := httptest.NewRecorder()
+	s.auth(s.handleCreatePrescription)(recRx, reqRx)
+
+	if recRx.Code != http.StatusConflict {
+		t.Errorf("expected 409 conflict for allergy warning, got %d", recRx.Code)
+	}
+
+	// Now prescribe with IgnoreWarning: true (confirmed by professional)
+	rxConfirmedBody, _ := json.Marshal(map[string]any{
+		"medication":    "Amoxicilina 500mg",
+		"dose":          "500mg",
+		"route":         "Oral",
+		"frequency":     "Cada 8 horas",
+		"duration":      "7 días",
+		"ignoreWarning": true,
+	})
+	reqRxOk := httptest.NewRequest("POST", "/api/patients/"+patient.ID+"/prescriptions", bytes.NewReader(rxConfirmedBody))
+	reqRxOk.SetPathValue("id", patient.ID)
+	reqRxOk.Header.Set("Authorization", "Bearer "+token)
+	recRxOk := httptest.NewRecorder()
+	s.auth(s.handleCreatePrescription)(recRxOk, reqRxOk)
+
+	if recRxOk.Code != http.StatusCreated {
+		t.Fatalf("expected 201 on confirmed prescription, got %d (%s)", recRxOk.Code, recRxOk.Body.String())
+	}
+
+	var rx Prescription
+	_ = json.NewDecoder(recRxOk.Body).Decode(&rx)
+
+	// Cancel prescription
+	cancelBody, _ := json.Marshal(map[string]string{
+		"reason": "Sustitución por Azitromicina",
+	})
+	reqCancel := httptest.NewRequest("POST", "/api/prescriptions/"+rx.ID+"/cancel", bytes.NewReader(cancelBody))
+	reqCancel.SetPathValue("id", rx.ID)
+	reqCancel.Header.Set("Authorization", "Bearer "+token)
+	recCancel := httptest.NewRecorder()
+	s.auth(s.handleCancelPrescription)(recCancel, reqCancel)
+
+	if recCancel.Code != http.StatusOK {
+		t.Errorf("expected 200 on cancel prescription, got %d", recCancel.Code)
+	}
+}
+
+func TestPatientSoftDeleteAndGuardianValidation(t *testing.T) {
+	s, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	token, _ := s.issueToken(&User{ID: "u1", Name: "Admin", Role: "admin"})
+
+	// RN-08: Minor without guardian should fail validation
+	minorBody, _ := json.Marshal(map[string]any{
+		"name":   "Niño Sin Tutor",
+		"doc":    "DOC-MINOR-1",
+		"birth":  "2020-01-01",
+		"sedeId": "s1",
+	})
+	reqMinor := httptest.NewRequest("POST", "/api/patients", bytes.NewReader(minorBody))
+	reqMinor.Header.Set("Authorization", "Bearer "+token)
+	recMinor := httptest.NewRecorder()
+	s.auth(s.handleCreatePatient)(recMinor, reqMinor)
+
+	if recMinor.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for minor without guardian, got %d", recMinor.Code)
+	}
+
+	// Minor WITH guardian should succeed
+	minorOkBody, _ := json.Marshal(map[string]any{
+		"name":          "Niño Con Tutor",
+		"doc":           "DOC-MINOR-2",
+		"birth":         "2020-01-01",
+		"sedeId":        "s1",
+		"guardianName":  "Papá Tutor",
+		"guardianPhone": "099123456",
+		"guardianRel":   "Padre",
+	})
+	reqMinorOk := httptest.NewRequest("POST", "/api/patients", bytes.NewReader(minorOkBody))
+	reqMinorOk.Header.Set("Authorization", "Bearer "+token)
+	recMinorOk := httptest.NewRecorder()
+	s.auth(s.handleCreatePatient)(recMinorOk, reqMinorOk)
+
+	if recMinorOk.Code != http.StatusCreated {
+		t.Fatalf("expected 201 for minor with guardian, got %d (%s)", recMinorOk.Code, recMinorOk.Body.String())
+	}
+
+	var created Patient
+	_ = json.NewDecoder(recMinorOk.Body).Decode(&created)
+
+	// RN-09: Soft delete patient
+	reqDel := httptest.NewRequest("DELETE", "/api/patients/"+created.ID, nil)
+	reqDel.SetPathValue("id", created.ID)
+	reqDel.Header.Set("Authorization", "Bearer "+token)
+	recDel := httptest.NewRecorder()
+	s.auth(s.handleDeletePatient)(recDel, reqDel)
+
+	if recDel.Code != http.StatusNoContent {
+		t.Errorf("expected 204 on delete, got %d", recDel.Code)
+	}
+
+	// Verify patient is inactive in db (soft delete)
+	var active bool
+	err := s.db.QueryRow(`SELECT active FROM patients WHERE id = ?`, created.ID).Scan(&active)
+	if err != nil {
+		t.Fatalf("failed to query soft deleted patient: %v", err)
+	}
+	if active {
+		t.Errorf("expected patient active = false, got true")
+	}
+}
+
+func TestReportsSummary(t *testing.T) {
+	s, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	token, _ := s.issueToken(&User{ID: "u1", Name: "Admin", Role: "admin"})
+
+	req := httptest.NewRequest("GET", "/api/reports/summary", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.auth(s.handleReportsSummary)(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 on reports summary, got %d", rec.Code)
+	}
+
+	var summary ReportsSummary
+	if err := json.NewDecoder(rec.Body).Decode(&summary); err != nil {
+		t.Fatalf("failed to decode reports summary: %v", err)
+	}
+}
