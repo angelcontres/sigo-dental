@@ -479,32 +479,19 @@ func seed(db *sql.DB) error {
 
 	// Hallazgos en odontograma para varios pacientes
 	findings := []string{
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p1','36','caries','O','Caries oclusal profunda','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p1','46','restauracion','O,V','Restauración de resina existente','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p1','11','sellante','O','','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p2','16','ausente','','Extracción previa, candidato a implante','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p2','26','corona','','Corona metal-cerámica','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p3','14','caries','M,D','Caries interproximal','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p3','24','caries','D','Caries incipiente','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p4','11','implante','','Implante osteointegrado','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p4','21','implante','','Implante osteointegrado','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p5','36','endodoncia','','Tratamiento de conducto completado','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p10','36','fractura','','Fractura vertical, evaluación de extracción','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p14','84','caries','O','Caries oclusal en primer molar temporal','` + nowISO() + `')`,
-		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES
-			('p14','74','sellante','O','Sellante preventivo','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p1','36','caries','O','Caries oclusal profunda','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p1','46','restauracion','O,V','Restauración de resina existente','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p1','11','sellante','O','Sellante preventivo','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p2','16','ausente','O','Extracción previa, candidato a implante','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p2','26','corona','O','Corona metal-cerámica','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p3','14','caries','M,D','Caries interproximal','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p3','24','caries','D','Caries incipiente','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p4','11','implante','O','Implante osteointegrado','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p4','21','implante','O','Implante osteointegrado','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p5','36','endodoncia','O','Tratamiento de conducto completado','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p10','36','fractura','O','Fractura vertical, evaluación de extracción','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p14','84','caries','O','Caries oclusal en primer molar temporal','` + nowISO() + `')`,
+		`INSERT INTO findings (patient_id, tooth, condition, surfaces, note, updated_at) VALUES ('p14','74','sellante','O','Sellante preventivo','` + nowISO() + `')`,
 	}
 	for _, stmt := range findings {
 		if _, err := tx.Exec(stmt); err != nil {
@@ -601,11 +588,11 @@ func seed(db *sql.DB) error {
 
 	// Presupuestos de tratamiento
 	treatmentBudgets := []string{
-		`INSERT INTO treatment_budgets (id, patient_id, total, status, created_at, updated_at) VALUES
+		`INSERT INTO treatment_budgets (id, patient_id, total_amount, status, created_at, updated_at) VALUES
 			('tb1','p12',250000,'APROBADO','` + nowISO() + `','` + nowISO() + `')`,
-		`INSERT INTO treatment_budgets (id, patient_id, total, status, created_at, updated_at) VALUES
+		`INSERT INTO treatment_budgets (id, patient_id, total_amount, status, created_at, updated_at) VALUES
 			('tb2','p5',180000,'PENDIENTE','` + nowISO() + `','` + nowISO() + `')`,
-		`INSERT INTO treatment_budgets (id, patient_id, total, status, created_at, updated_at) VALUES
+		`INSERT INTO treatment_budgets (id, patient_id, total_amount, status, created_at, updated_at) VALUES
 			('tb3','p15',350000,'EN_PROGRESO','` + nowISO() + `','` + nowISO() + `')`,
 	}
 	for _, stmt := range treatmentBudgets {
@@ -736,7 +723,7 @@ func seed(db *sql.DB) error {
 		`INSERT INTO invoices (id, patient_id, payment_id, number, amount, tax, total, cae, cae_due, status, created_at, issued_at) VALUES
 			('inv3','p10','pay3','F-003',45000,9450,54450,'CAE-123458','2025-01-01','issued','` + yesterday + `','` + yesterday + `')`,
 		`INSERT INTO invoices (id, patient_id, payment_id, number, amount, tax, total, cae, cae_due, status, created_at, issued_at) VALUES
-			('inv4','p1','pay4','F-004',20000,4200,24200','','','draft','` + todayDate + `','')`,
+			('inv4','p1','pay4','F-004',20000,4200,24200,'PENDIENTE','PENDIENTE','draft','` + todayDate + `','')`,
 	}
 	for _, stmt := range invoices {
 		if _, err := tx.Exec(stmt); err != nil {

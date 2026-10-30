@@ -35,7 +35,7 @@ func main() {
 
 	db, err := openDB(dbConnStr)
 	if err != nil {
-		log.Fatalf("no se pudo conectar a PostgreSQL: %v", err)
+		log.Fatalf("no se pudo conectar a la base de datos: %v", err)
 	}
 	defer db.Close()
 	if err := seed(db); err != nil {
@@ -90,6 +90,9 @@ func main() {
 	// Treatment Budgets - RF-07
 	mux.HandleFunc("GET /api/patients/{id}/treatment-budgets", s.auth(s.handleTreatmentBudgets))
 	mux.HandleFunc("POST /api/patients/{id}/treatment-budgets", s.auth(s.handleCreateTreatmentBudget))
+	mux.HandleFunc("GET /api/treatment-budgets/{budgetId}/items", s.auth(s.handleTreatmentItems))
+	mux.HandleFunc("POST /api/treatment-budgets/{budgetId}/items", s.auth(requireRole("admin", "odontologo")(s.handleCreateTreatmentItem)))
+	mux.HandleFunc("POST /api/treatment-items/{itemId}/approve", s.auth(requireRole("admin", "odontologo")(s.handleApproveTreatmentItem)))
 	mux.HandleFunc("POST /api/treatment-items/{itemId}/convert", s.auth(s.handleConvertItemToAppointment))
 
 	// Inventory - RF-14
@@ -129,7 +132,11 @@ func main() {
 	handler := withCORS(withLogging(mux))
 
 	log.Printf("SIGO-Dental API escuchando en http://localhost%s", addr)
-	log.Printf("base de datos: PostgreSQL")
+	dbKind := "SQLite"
+	if strings.Contains(dbConnStr, "postgres://") || strings.Contains(dbConnStr, "@") {
+		dbKind = "PostgreSQL"
+	}
+	log.Printf("base de datos: %s", dbKind)
 	if _, err := os.Stat(filepath.Join(staticDir, "index.html")); err != nil {
 		log.Printf("aviso: no se encontró el frontend compilado en %s (usá Vite en desarrollo o npm run build)", staticDir)
 	}

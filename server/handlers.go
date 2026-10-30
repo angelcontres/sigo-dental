@@ -1067,6 +1067,88 @@ func (s *Server) handleCreateTreatmentBudget(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, 201, TreatmentBudget{ID: id, PatientID: patientID, Total: in.Total, Status: in.Status, CreatedAt: nowISO(), UpdatedAt: nowISO()})
 }
 
+func (s *Server) handleTreatmentItems(w http.ResponseWriter, r *http.Request) {
+	budgetID := r.PathValue("budgetId")
+	rows, err := s.db.Query(`SELECT id, budget_id, description, amount, phase, approved, converted FROM treatment_items WHERE budget_id = ? ORDER BY phase, id`, budgetID)
+	if err != nil {
+		writeErr(w, 500, "no se pudieron leer los ítems del presupuesto")
+		return
+	}
+	defer rows.Close()
+
+	items := []TreatmentItem{}
+	for rows.Next() {
+		var it TreatmentItem
+		if err := rows.Scan(&it.ID, &it.BudgetID, &it.Description, &it.Amount, &it.Phase, &it.Approved, &it.Converted); err == nil {
+			items = append(items, it)
+		}
+	}
+	writeJSON(w, 200, items)
+}
+
+func (s *Server) handleCreateTreatmentItem(w http.ResponseWriter, r *http.Request) {
+	budgetID := r.PathValue("budgetId")
+	var in struct {
+		Description string  `json:"description"`
+		Amount      float64 `json:"amount"`
+		Phase       string  `json:"phase"`
+	}
+	if err := decode(r, &in); err != nil {
+		writeErr(w, 400, "datos inválidos")
+		return
+	}
+	if in.Description == "" || in.Amount <= 0 {
+		writeErr(w, 400, "descripción y monto positivo son obligatorios")
+		return
+	}
+	if in.Phase == "" {
+		in.Phase = "Fase 1"
+	}
+
+	c := s.currentUser(r)
+	id := uuid.NewString()
+	_, err := s.db.Exec(`INSERT INTO treatment_items (id, budget_id, description, amount, phase, approved, converted) VALUES (?,?,?,?,?,false,false)`,
+		id, budgetID, in.Description, in.Amount, in.Phase)
+	if err != nil {
+		writeErr(w, 500, "no se pudo crear el ítem del presupuesto")
+		return
+	}
+
+	// Actualizar total del presupuesto
+	_, _ = s.db.Exec(`UPDATE treatment_budgets SET total_amount = (SELECT COALESCE(SUM(amount), 0) FROM treatment_items WHERE budget_id = ?), updated_at = ? WHERE id = ?`,
+		budgetID, nowISO(), budgetID)
+
+	s.audit(c.UserID, c.Name, "CREAR", "treatment_item", id, "presupuesto: "+budgetID)
+	writeJSON(w, 201, TreatmentItem{
+		ID:          id,
+		BudgetID:    budgetID,
+		Description: in.Description,
+		Amount:      in.Amount,
+		Phase:       in.Phase,
+		Approved:    false,
+		Converted:   false,
+	})
+}
+
+func (s *Server) handleApproveTreatmentItem(w http.ResponseWriter, r *http.Request) {
+	itemID := r.PathValue("itemId")
+	c := s.currentUser(r)
+
+	res, err := s.db.Exec(`UPDATE treatment_items SET approved = true WHERE id = ?`, itemID)
+	if err != nil {
+		writeErr(w, 500, "no se pudo aprobar el ítem")
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeErr(w, 404, "ítem no encontrado")
+		return
+	}
+
+	s.audit(c.UserID, c.Name, "APROBAR", "treatment_item", itemID, "ítem aprobado")
+	writeJSON(w, 200, map[string]string{"status": "ok", "itemId": itemID})
+}
+
 // RF-08: Convertir ítem aprobado a turno
 func (s *Server) handleConvertItemToAppointment(w http.ResponseWriter, r *http.Request) {
 	itemID := r.PathValue("itemId")
@@ -1219,7 +1301,7 @@ func (s *Server) handleInventoryMovement(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	
-	s.audit(c.UserID, c.Name, "CREAR", "inventory_movement", id, "ítem: "+in.ItemID+" cantidad: "+string(rune(in.Quantity)))
+	s.audit(c.UserID, c.Name, "CREAR", "inventory_movement", id, fmt.Sprintf("ítem: %s cantidad: %d", in.ItemID, in.Quantity))
 	writeJSON(w, 201, InventoryMovement{ID: id, ItemID: in.ItemID, Quantity: in.Quantity, Type: in.Type, Reason: in.Reason, CreatedAt: nowISO()})
 }
 

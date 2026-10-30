@@ -1,8 +1,27 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAppData } from './appdata';
 import { useAuth } from './auth';
 import { ROLE_LABEL, initials, todayISO, formatLongDate } from './utils';
-import { IconDashboard, IconPatients, IconAgenda, IconTooth, IconCash, IconAudit, IconUsers, IconBrand } from './icons';
+import {
+  IconDashboard,
+  IconPatients,
+  IconAgenda,
+  IconTooth,
+  IconCash,
+  IconAudit,
+  IconUsers,
+  IconBrand,
+  IconClipboard,
+  IconFileCheck,
+  IconBudget,
+  IconBox,
+  IconInvoice,
+  IconPercentage,
+  IconBell,
+  IconShield,
+  IconPeriodontal,
+} from './icons';
 import type { Role } from './types';
 
 interface NavItem {
@@ -20,23 +39,23 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { to: '/pacientes', label: 'Pacientes', icon: <IconPatients />, roles: ['admin', 'odontologo', 'recepcion'] },
       { to: '/agenda', label: 'Agenda', icon: <IconAgenda />, roles: ['admin', 'odontologo', 'recepcion'] },
       { to: '/odontograma', label: 'Odontograma', icon: <IconTooth />, roles: ['admin', 'odontologo'] },
-      { to: '/periodontograma', label: 'Periodontograma', icon: <IconTooth />, roles: ['admin', 'odontologo'] },
-      { to: '/soep', label: 'Notas SOEP', icon: <IconDashboard />, roles: ['admin', 'odontologo'] },
-      { to: '/consentimientos', label: 'Consentimientos', icon: <IconDashboard />, roles: ['admin', 'odontologo'] },
+      { to: '/periodontograma', label: 'Periodontograma', icon: <IconPeriodontal />, roles: ['admin', 'odontologo'] },
+      { to: '/soep', label: 'Notas SOEP', icon: <IconClipboard />, roles: ['admin', 'odontologo'] },
+      { to: '/consentimientos', label: 'Consentimientos', icon: <IconFileCheck />, roles: ['admin', 'odontologo'] },
     ],
   },
   {
     group: 'Administración',
     items: [
       { to: '/caja', label: 'Caja', icon: <IconCash />, roles: ['admin', 'recepcion'] },
-      { to: '/presupuestos', label: 'Presupuestos', icon: <IconDashboard />, roles: ['admin', 'odontologo', 'recepcion'] },
-      { to: '/inventario', label: 'Inventario', icon: <IconDashboard />, roles: ['admin', 'recepcion'] },
-      { to: '/facturacion', label: 'Facturación', icon: <IconDashboard />, roles: ['admin', 'recepcion'] },
-      { to: '/comisiones', label: 'Comisiones', icon: <IconDashboard />, roles: ['admin'] },
-      { to: '/notificaciones', label: 'Notificaciones', icon: <IconDashboard />, roles: ['admin', 'recepcion'] },
+      { to: '/presupuestos', label: 'Presupuestos', icon: <IconBudget />, roles: ['admin', 'odontologo', 'recepcion'] },
+      { to: '/inventario', label: 'Inventario', icon: <IconBox />, roles: ['admin', 'recepcion'] },
+      { to: '/facturacion', label: 'Facturación', icon: <IconInvoice />, roles: ['admin', 'recepcion'] },
+      { to: '/comisiones', label: 'Comisiones', icon: <IconPercentage />, roles: ['admin'] },
+      { to: '/notificaciones', label: 'Notificaciones', icon: <IconBell />, roles: ['admin', 'recepcion'] },
       { to: '/auditoria', label: 'Auditoría', icon: <IconAudit />, roles: ['admin'] },
       { to: '/usuarios', label: 'Usuarios', icon: <IconUsers />, roles: ['admin'] },
-      { to: '/mfa', label: 'MFA', icon: <IconDashboard />, roles: ['admin', 'odontologo', 'recepcion'] },
+      { to: '/mfa', label: 'MFA / Seguridad', icon: <IconShield />, roles: ['admin', 'odontologo', 'recepcion'] },
     ],
   },
 ];
@@ -46,15 +65,25 @@ const TITLES: Record<string, { title: string; subtitle: string }> = {
   '/pacientes': { title: 'Pacientes', subtitle: 'Fichas, alertas y acceso al odontograma' },
   '/agenda': { title: 'Agenda', subtitle: 'Turnos y estados de atención' },
   '/odontograma': { title: 'Odontograma', subtitle: 'Hallazgos por pieza dental' },
-  '/caja': { title: 'Caja', subtitle: 'Cobros y cierre del día' },
-  '/auditoria': { title: 'Auditoría', subtitle: 'Trazabilidad de acciones' },
-  '/usuarios': { title: 'Usuarios', subtitle: 'Equipo y roles de acceso' },
+  '/periodontograma': { title: 'Periodontograma', subtitle: 'Sondaje y evaluación periodontal' },
+  '/soep': { title: 'Notas SOEP', subtitle: 'Registro clínico de evolución (S-O-E-P)' },
+  '/consentimientos': { title: 'Consentimientos', subtitle: 'Consentimientos informados y firma digital' },
+  '/caja': { title: 'Caja', subtitle: 'Cobros y cierre ciego del día' },
+  '/presupuestos': { title: 'Presupuestos', subtitle: 'Planes de tratamiento por fases y presupuestos' },
+  '/inventario': { title: 'Inventario', subtitle: 'Control de insumos, stock y movimientos' },
+  '/facturacion': { title: 'Facturación', subtitle: 'Comprobantes y facturación electrónica' },
+  '/comisiones': { title: 'Comisiones', subtitle: 'Liquidación de honorarios profesionales' },
+  '/notificaciones': { title: 'Notificaciones', subtitle: 'Recordatorios automáticos y avisos' },
+  '/auditoria': { title: 'Auditoría', subtitle: 'Trazabilidad y registro inmutable de acciones' },
+  '/usuarios': { title: 'Usuarios', subtitle: 'Equipo de profesionales y roles de acceso' },
+  '/mfa': { title: 'MFA / Seguridad', subtitle: 'Autenticación en dos pasos (TOTP)' },
 };
 
 export function Layout() {
   const { user, logout } = useAuth();
   const { meta, sedeId, setSedeId } = useAppData();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!user) return null;
 
@@ -66,7 +95,14 @@ export function Layout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {mobileMenuOpen && (
+        <div 
+          className="modal-backdrop" 
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ zIndex: 40 }}
+        />
+      )}
+      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="brand">
           <div className="brand-icon" aria-hidden="true"><IconBrand /></div>
           <div className="brand-text">
@@ -114,6 +150,14 @@ export function Layout() {
 
       <main className="main">
         <header className="topbar">
+          <button 
+            type="button" 
+            className="mobile-menu-btn" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
           <div className="page-heading">
             <h1>{title.title}</h1>
             <p>{title.subtitle}</p>

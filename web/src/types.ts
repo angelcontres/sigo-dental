@@ -182,6 +182,7 @@ export interface TreatmentItem {
   amount: number;
   phase: string;
   approved: boolean;
+  converted?: boolean;
 }
 
 // Inventory - RF-14

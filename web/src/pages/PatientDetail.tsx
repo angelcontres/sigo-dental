@@ -90,6 +90,20 @@ export function PatientDetailPage() {
             </button>
           )}
         </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', width: '100%', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+          <Link to={`/soep?patientId=${patient.id}`} className="btn btn-sm btn-secondary">
+            Notas SOEP
+          </Link>
+          <Link to={`/presupuestos?patientId=${patient.id}`} className="btn btn-sm btn-secondary">
+            Presupuestos
+          </Link>
+          <Link to={`/periodontograma?patientId=${patient.id}`} className="btn btn-sm btn-secondary">
+            Periodontograma
+          </Link>
+          <Link to={`/consentimientos?patientId=${patient.id}`} className="btn btn-sm btn-secondary">
+            Consentimientos
+          </Link>
+        </div>
       </section>
 
       <div className="tabs" role="tablist">

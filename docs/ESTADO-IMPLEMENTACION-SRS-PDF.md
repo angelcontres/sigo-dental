@@ -19,7 +19,7 @@
 | **RF-05** | Evolución y notas SOEP | ✅ IMPLEMENTADO COMPLETO | Subjetivo, Objetivo, Evaluación, Plan, bloqueo 24h |
 | **RF-06** | Consentimiento informado | ✅ IMPLEMENTADO COMPLETO | Creación de consentimientos, firma digital |
 | **RF-07** | Presupuestos multinivel | ✅ IMPLEMENTADO COMPLETO | Presupuestos por paciente, ítems por fase, aprobación de ítems |
-| **RF-08** | Aprobación y transición a citas | ✅ IMPLEMENTADO PARCIAL | UI de aprobación de ítems lista, conversión a turnos pendiente |
+| **RF-08** | Aprobación y transición a citas | ✅ IMPLEMENTADO COMPLETO | Aprobación de ítems y conversión directa a turnos agendados |
 | **RF-09** | Agendamiento multirrecinto | ✅ MVP | Por sillón y profesional |
 | **RF-10** | Control de estados de cita | ✅ MVP | 5 estados + No-Show |
 | **RF-12** | Punto de venta y facturación | ✅ MVP | Cobros, medios de pago, cierre de caja |
@@ -32,8 +32,7 @@
 
 | RF | Descripción | Estado | Limitación |
 |-----|------------|--------|-----------|
-| **RF-11** | Notificaciones automáticas | ⚠️ Backend listo | Pendiente integración WhatsApp/SMS/Email |
-| **RF-08** | Aprobación y transición a citas | ⚠️ Estructura lista | Pendiente conversión de ítems a turnos |
+| **RF-11** | Notificaciones automáticas | ⚠️ Backend listo | Pendiente integración externa con proveedores SMS/WhatsApp |
 
 ### ❌ Requisitos No Implementados (Fuera del alcance actual)
 

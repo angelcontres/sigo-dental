@@ -14,6 +14,7 @@ import type {
   PeriodontalMeasurement,
   SOEPNote,
   TreatmentBudget,
+  TreatmentItem,
   InventoryItem,
   InventoryMovement,
   Consent,
@@ -205,11 +206,27 @@ export const api = {
       body: JSON.stringify(input),
     }),
 
-  // Treatment Budgets - RF-07
+  // Treatment Budgets - RF-07 & RF-08
   treatmentBudgets: (patientId: string) =>
     request<TreatmentBudget[]>(`/patients/${patientId}/treatment-budgets`),
   createTreatmentBudget: (patientId: string, input: { total: number; status?: string }) =>
     request<TreatmentBudget>(`/patients/${patientId}/treatment-budgets`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  treatmentItems: (budgetId: string) =>
+    request<TreatmentItem[]>(`/treatment-budgets/${budgetId}/items`),
+  createTreatmentItem: (budgetId: string, input: { description: string; amount: number; phase: string }) =>
+    request<TreatmentItem>(`/treatment-budgets/${budgetId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  approveTreatmentItem: (itemId: string) =>
+    request<{ status: string; itemId: string }>(`/treatment-items/${itemId}/approve`, {
+      method: 'POST',
+    }),
+  convertTreatmentItem: (itemId: string, input: { date: string; time: string; professionalId: string; chairId: string }) =>
+    request<{ appointmentId: string; itemId: string }>(`/treatment-items/${itemId}/convert`, {
       method: 'POST',
       body: JSON.stringify(input),
     }),
