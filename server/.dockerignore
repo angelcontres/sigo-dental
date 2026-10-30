@@ -12,9 +12,7 @@ data/
 *.db-shm
 *.db-wal
 
-# Go
-*.mod
-*.sum
+# Vendor
 vendor/
 
 # IDE
